@@ -1,0 +1,112 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: env(safe-area-inset-top) 40px 0;
+  height: calc(var(--nav-height) + env(safe-area-inset-top));
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.03);
+}
+
+.navbar::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sunset-orange), var(--forest-green), transparent);
+  opacity: 0.5;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--forest-green);
+}
+
+.logoImage {
+  height: 36px;
+  width: auto;
+  border-radius: 8px;
+}
+
+.links {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.links a {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--foreground);
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.links a:hover {
+  background: rgba(45, 90, 39, 0.1);
+  color: var(--forest-green);
+  transform: translateY(-2px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .links a:hover {
+    background: rgba(255, 140, 66, 0.15);
+    color: var(--sunset-orange);
+  }
+}
+
+.profileBtn {
+  background: var(--forest-green);
+  color: white !important;
+  padding: 8px 16px;
+  border-radius: 10px;
+}
+
+.profileBtn:hover {
+  background: var(--forest-green-soft);
+}
+
+@media (max-width: 768px) {
+  .links {
+    display: none;
+  }
+  .container {
+    justify-content: center; /* Center logo on mobile */
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .logo {
+    color: var(--sunset-orange);
+  }
+  .profileBtn {
+    background: var(--sunset-orange);
+  }
+  .profileBtn:hover {
+    background: var(--sunset-orange-soft);
+  }
+}

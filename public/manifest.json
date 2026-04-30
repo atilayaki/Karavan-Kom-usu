@@ -1,0 +1,21 @@
+{
+  "name": "Karavan Komşusu",
+  "short_name": "Komşu",
+  "description": "Karavancılar için premium sosyal ağ ve bilgi platformu.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF5E6",
+  "theme_color": "#2D5A27",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,414 @@
+.container {
+  display: flex;
+  height: calc(100vh - var(--nav-height));
+  background: var(--background);
+}
+
+.sidebar {
+  width: 280px;
+  background: var(--card-bg);
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  padding: 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.sidebarHeader h2 {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.channelList {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.channelList h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.mt20 {
+  margin-top: 20px;
+}
+
+.channelBtn {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.channelBtn:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+.activeChannel {
+  background: var(--forest-green) !important;
+  color: white;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .channelBtn:hover {
+    background: rgba(255,255,255,0.05);
+  }
+}
+
+.onlineDot, .offlineDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.onlineDot { background: #4CAF50; }
+.offlineDot { background: #9E9E9E; }
+
+/* Chat Area */
+.chatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+}
+
+.chatHeader {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--card-bg);
+}
+
+.sosButton {
+  background: rgba(244, 67, 54, 0.1);
+  color: #F44336;
+  border: 1px solid #F44336;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sosButton:hover {
+  background: #F44336;
+  color: white;
+}
+
+.messagesContainer {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.dateSeparator {
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  margin: 10px 0;
+  position: relative;
+}
+
+.dateSeparator::before, .dateSeparator::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: rgba(0,0,0,0.1);
+}
+
+.dateSeparator::before { left: 0; }
+.dateSeparator::after { right: 0; }
+
+.messageWrapper {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+}
+
+.messageMe {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.messageOther {
+  align-self: flex-start;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--sunset-orange);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.messageMe .messageContent {
+  align-items: flex-end;
+}
+
+.senderName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-left: 4px;
+}
+
+.messageBubble {
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
+  line-height: 1.5;
+}
+
+.messageMe .messageBubble {
+  background: var(--forest-green);
+  color: white;
+  border: none;
+  border-top-right-radius: 4px;
+}
+
+.messageOther .messageBubble {
+  border-top-left-radius: 4px;
+}
+
+.messageTime {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  margin: 0 4px;
+}
+
+/* Friend System Styles */
+.friendsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+}
+
+.friendCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: background 0.2s;
+}
+
+.friendCard:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .friendCard:hover {
+    background: rgba(255,255,255,0.05);
+  }
+}
+
+.activeFriend {
+  background: rgba(45, 90, 39, 0.1) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .activeFriend {
+    background: rgba(255, 140, 66, 0.15) !important;
+  }
+}
+
+.friendInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.avatarWrap {
+  position: relative;
+}
+
+.statusDot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--background);
+}
+
+.online { background: #4CAF50; }
+.offline { background: #9E9E9E; }
+
+.friendDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.friendName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.friendType {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.addFriendBtn {
+  background: transparent;
+  border: 1px solid var(--sunset-orange);
+  color: var(--sunset-orange);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.friendActions button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.friendActions button:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.nudgeButton {
+  background: linear-gradient(135deg, var(--sunset-orange), #ff9d5c);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(255, 140, 66, 0.3);
+  transition: transform 0.2s;
+}
+
+.nudgeButton:hover {
+  transform: scale(1.05);
+}
+
+.nudgeBubble {
+  background: linear-gradient(135deg, #FFD700, #FFA500) !important;
+  color: #000 !important;
+  font-weight: bold;
+  animation: shake 0.5s;
+}
+
+.nudgeAlert {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 140, 66, 0.9);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  z-index: 2000;
+  animation: slideDown 0.3s ease-out;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-5deg); }
+  50% { transform: translateX(5px) rotate(5deg); }
+  75% { transform: translateX(-5px) rotate(-5deg); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes slideDown {
+  from { top: -50px; opacity: 0; }
+  to { top: 20px; opacity: 1; }
+}
+
+.inputArea {
+  padding: 20px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  gap: 12px;
+}
+
+.messageInput {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.1);
+  background: var(--background);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .messageInput {
+    border-color: rgba(255,255,255,0.1);
+    color: white;
+  }
+}
+
+.sendButton {
+  padding: 0 24px;
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: absolute;
+    transform: translateX(-100%);
+    z-index: 100;
+    height: 100%;
+  }
+  
+  .messageWrapper {
+    max-width: 90%;
+  }
+}
