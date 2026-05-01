@@ -35,13 +35,10 @@ export default function InstallPWA() {
       if (elapsed < DISMISS_DAYS * 24 * 60 * 60 * 1000) return;
     }
 
-    // iOS: no native prompt → show FAB after short delay
-    if (ios) {
-      const t = setTimeout(() => setShowFab(true), 1500);
-      return () => clearTimeout(t);
-    }
+    // Show FAB right away on every non-installed platform.
+    // iOS has no beforeinstallprompt; Android/desktop may dispatch it later.
+    setShowFab(true);
 
-    // Android/desktop: wait for beforeinstallprompt
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
