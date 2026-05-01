@@ -210,21 +210,50 @@ CREATE TABLE IF NOT EXISTS activities (
 );
 
 -- =====================================================================
+-- Eksik geography kolonlarını tamamla (eski şemalardan kalanlar için)
+-- =====================================================================
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='spots' AND column_name='location') THEN
+    ALTER TABLE spots ADD COLUMN location GEOGRAPHY(POINT);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='spots' AND column_name='address') THEN
+    ALTER TABLE spots ADD COLUMN address TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='spots' AND column_name='category') THEN
+    ALTER TABLE spots ADD COLUMN category TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='spots' AND column_name='description') THEN
+    ALTER TABLE spots ADD COLUMN description TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='geographic_notes' AND column_name='location') THEN
+    ALTER TABLE geographic_notes ADD COLUMN location GEOGRAPHY(POINT);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='routes' AND column_name='path') THEN
+    ALTER TABLE routes ADD COLUMN path GEOGRAPHY(LINESTRING);
+  END IF;
+END $$;
+
+-- =====================================================================
 -- View'lar
 -- =====================================================================
-CREATE OR REPLACE VIEW vw_spots AS
+DROP VIEW IF EXISTS vw_spots;
+CREATE VIEW vw_spots AS
 SELECT id, title, description, category, address,
        ST_Y(location::geometry) as lat,
        ST_X(location::geometry) as lng
 FROM spots;
 
-CREATE OR REPLACE VIEW vw_geographic_notes AS
+DROP VIEW IF EXISTS vw_geographic_notes;
+CREATE VIEW vw_geographic_notes AS
 SELECT id, user_id, note, location_name, created_at,
        ST_Y(location::geometry) as lat,
        ST_X(location::geometry) as lng
 FROM geographic_notes;
 
-CREATE OR REPLACE VIEW vw_routes AS
+DROP VIEW IF EXISTS vw_routes;
+CREATE VIEW vw_routes AS
 SELECT id, user_id, title, description, start_location_name, end_location_name, created_at,
        ST_AsGeoJSON(path)::json as geojson_path
 FROM routes;
