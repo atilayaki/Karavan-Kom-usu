@@ -209,6 +209,19 @@ CREATE TABLE IF NOT EXISTS activities (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- activities eksik kolonlar (eski sürümlerden geçiş için)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='activities' AND column_name='ref_id') THEN
+    ALTER TABLE activities ADD COLUMN ref_id BIGINT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='activities' AND column_name='activity_type') THEN
+    ALTER TABLE activities ADD COLUMN activity_type TEXT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='activities' AND column_name='description') THEN
+    ALTER TABLE activities ADD COLUMN description TEXT;
+  END IF;
+END $$;
+
 -- =====================================================================
 -- Eksik geography kolonlarını tamamla (eski şemalardan kalanlar için)
 -- =====================================================================
