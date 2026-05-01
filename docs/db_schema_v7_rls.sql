@@ -25,6 +25,14 @@ CREATE POLICY "profiles_update_self" ON profiles FOR UPDATE USING (auth.uid() = 
 CREATE POLICY "profiles_delete_self" ON profiles FOR DELETE USING (auth.uid() = id);
 
 -- ---- spots ----
+-- created_by kolonu eksikse ekle (eski şemalarda olmayabilir)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                 WHERE table_name='spots' AND column_name='created_by') THEN
+    ALTER TABLE spots ADD COLUMN created_by UUID REFERENCES profiles(id);
+  END IF;
+END $$;
+
 ALTER TABLE spots ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "spots_select_all"   ON spots;
 DROP POLICY IF EXISTS "spots_insert_auth"  ON spots;
@@ -32,6 +40,7 @@ DROP POLICY IF EXISTS "spots_update_owner" ON spots;
 DROP POLICY IF EXISTS "spots_delete_owner" ON spots;
 
 CREATE POLICY "spots_select_all"   ON spots FOR SELECT USING (true);
+-- created_by NULL olabileceği eski kayıtlar için: insert'te uid eşleşmeli, update/delete'te de
 CREATE POLICY "spots_insert_auth"  ON spots FOR INSERT WITH CHECK (auth.uid() = created_by);
 CREATE POLICY "spots_update_owner" ON spots FOR UPDATE USING (auth.uid() = created_by) WITH CHECK (auth.uid() = created_by);
 CREATE POLICY "spots_delete_owner" ON spots FOR DELETE USING (auth.uid() = created_by);
