@@ -3,12 +3,28 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import InstallPWA from "@/components/InstallPWA";
 import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Karavan Komşusu | Yolun Tadını Birlikte Çıkaralım",
   description: "Türkiye'nin karavancılara özel premium sosyal platformu. Güvenli konaklama noktaları, uzman ustalar, anlık haberleşme ve topluluk.",
   manifest: "/manifest.json",
+  applicationName: "Karavan Komşusu",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Karavan Komşusu",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "Karavan Komşusu",
     description: "Yolun Tadını Birlikte Çıkaralım",
@@ -44,6 +60,7 @@ export default function RootLayout({
             {children}
           </main>
           <BottomNav />
+          <InstallPWA />
         </ToastProvider>
       </body>
     </html>
