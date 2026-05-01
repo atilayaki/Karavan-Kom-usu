@@ -27,6 +27,12 @@ export default function TelsizPage() {
 
   const channels = ['Kamp 1', 'Mekanik & Arıza', 'Alım-Satım', 'Geyik', 'Acil Durum'];
 
+  // Two UUIDs → deterministic, collision-free DM channel id (lexicographic order)
+  const dmChannelId = (a: string, b: string) => {
+    const [x, y] = [a, b].sort();
+    return `dm_${x}_${y}`;
+  };
+
   // Initialize Auth & Data
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -108,10 +114,7 @@ export default function TelsizPage() {
           .gt('created_at', thirtyMinutesAgo);
         
         if (isPrivate && privateUser && user) {
-          const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-          const p2 = Math.max(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-          const dmChannel = `dm_${p1}_${p2}`;
-          query = query.eq('channel', dmChannel);
+          query = query.eq('channel', dmChannelId(user.id, privateUser.id));
         } else {
           query = query.eq('channel', activeChannel);
         }
@@ -138,9 +141,7 @@ export default function TelsizPage() {
 
     let currentChannelName = activeChannel;
     if (isPrivate && privateUser && user) {
-        const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        const p2 = Math.max(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        currentChannelName = `dm_${p1}_${p2}`;
+      currentChannelName = dmChannelId(user.id, privateUser.id);
     }
 
     const subscription = supabase
@@ -187,9 +188,7 @@ export default function TelsizPage() {
     let targetChannel = overrideChannel || activeChannel;
     
     if (!overrideChannel && isPrivate && privateUser) {
-        const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        const p2 = Math.max(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        targetChannel = `dm_${p1}_${p2}`;
+      targetChannel = dmChannelId(user.id, privateUser.id);
     }
 
     const { error } = await supabase.from('messages').insert([

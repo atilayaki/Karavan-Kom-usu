@@ -218,7 +218,7 @@ export default function PazaryeriPage() {
                     className={`${styles.bookmarkBtn} ${bookmarks.has(product.id) ? styles.bookmarked : ''}`}
                     onClick={(e) => toggleBookmark(e, product.id)}
                   >
-                    <IconHeart size={18} fill={bookmarks.has(product.id) ? "currentColor" : "none"} />
+                    <IconHeart size={18} filled={bookmarks.has(product.id)} />
                   </button>
                 </div>
                 <div className={styles.cardBody}>

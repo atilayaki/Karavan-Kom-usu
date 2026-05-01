@@ -97,7 +97,6 @@ export default function ManzaraPage() {
         } else {
           query = query.order('created_at', { ascending: false });
         }
-        const { data, error } = query;
         const res = await query;
         if (res.error) {
           console.error("Posts fetch error details:", res.error);
