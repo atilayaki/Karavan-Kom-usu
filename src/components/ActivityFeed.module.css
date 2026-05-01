@@ -1,0 +1,53 @@
+.feedContainer {
+  padding: 20px;
+  margin-top: 30px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.feedContainer h3 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.3s ease;
+}
+
+.activityItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(5px);
+}
+
+.icon {
+  font-size: 1.2rem;
+  background: rgba(255, 140, 66, 0.1);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.details p {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.time {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}

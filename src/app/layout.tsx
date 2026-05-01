@@ -2,11 +2,19 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
+import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
   title: "Karavan Komşusu | Yolun Tadını Birlikte Çıkaralım",
-  description: "Karavancılar için premium sosyal ağ ve bilgi platformu.",
+  description: "Türkiye'nin karavancılara özel premium sosyal platformu. Güvenli konaklama noktaları, uzman ustalar, anlık haberleşme ve topluluk.",
   manifest: "/manifest.json",
+  openGraph: {
+    title: "Karavan Komşusu",
+    description: "Yolun Tadını Birlikte Çıkaralım",
+    type: "website",
+    locale: "tr_TR",
+  },
 };
 
 export const viewport = {
@@ -25,15 +33,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <body className="">
-        <div className="bg-shape bg-shape-1"></div>
-        <div className="bg-shape bg-shape-2"></div>
-        <div className="bg-shape bg-shape-3"></div>
-        <Navbar />
-        <main style={{ marginTop: 'var(--nav-height)', paddingBottom: '70px', position: 'relative', zIndex: 1 }}>
-          {children}
-        </main>
-        <BottomNav />
+      <body>
+        <ToastProvider>
+          <div className="bg-shape bg-shape-1" aria-hidden="true"></div>
+          <div className="bg-shape bg-shape-2" aria-hidden="true"></div>
+          <div className="bg-shape bg-shape-3" aria-hidden="true"></div>
+          <Navbar />
+          <VerifyEmailBanner />
+          <main style={{ marginTop: 'var(--nav-height)', paddingBottom: '80px', position: 'relative', zIndex: 1 }}>
+            {children}
+          </main>
+          <BottomNav />
+        </ToastProvider>
       </body>
     </html>
   );

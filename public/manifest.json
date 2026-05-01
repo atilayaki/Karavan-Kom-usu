@@ -6,16 +6,37 @@
   "display": "standalone",
   "background_color": "#FDF5E6",
   "theme_color": "#2D5A27",
+  "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Telsiz",
+      "url": "/telsiz",
+      "description": "Anlık yardımlaşma ve sohbet"
+    },
+    {
+      "name": "Manzara",
+      "url": "/manzara",
+      "description": "Yol hikayelerini keşfet"
+    },
+    {
+      "name": "Pazaryeri",
+      "url": "/pazaryeri",
+      "description": "Ekipman alışverişi"
     }
   ]
 }

@@ -39,22 +39,45 @@
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   color: var(--forest-green);
 }
 
 .logoImage {
-  height: 36px;
-  width: auto;
-  border-radius: 8px;
+  height: 48px;
+  width: 48px;
+  transition: transform 0.3s ease;
+  color: inherit;
+}
+
+.logo:hover .logoImage {
+  transform: scale(1.1) rotate(-5deg);
 }
 
 .links {
   display: flex;
   align-items: center;
   gap: 30px;
+}
+
+.installBtn {
+  background: var(--forest-green-glow);
+  color: var(--forest-green);
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.installBtn:hover {
+  background: var(--forest-green);
+  color: white;
 }
 
 .links a {
@@ -106,7 +129,12 @@
   .profileBtn {
     background: var(--sunset-orange);
   }
-  .profileBtn:hover {
-    background: var(--sunset-orange-soft);
-  }
+}
+
+:global(.dark-mode) .logo {
+  color: var(--sunset-orange);
+}
+
+:global(.dark-mode) .profileBtn {
+  background: var(--sunset-orange);
 }

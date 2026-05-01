@@ -1,0 +1,80 @@
+.calcContainer {
+  padding: 25px;
+  margin-top: 30px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.header p {
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputGroup label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.inputGroup input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.inputGroup input:focus {
+  outline: none;
+  border-color: var(--sunset-orange);
+  box-shadow: 0 0 10px rgba(255, 140, 66, 0.1);
+}
+
+.result {
+  background: rgba(255, 140, 66, 0.05);
+  padding: 20px;
+  border-radius: 15px;
+  border: 1px dashed var(--sunset-orange);
+}
+
+.resItem {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 140, 66, 0.2);
+  font-size: 1.2rem;
+  color: var(--sunset-orange);
+}

@@ -1,38 +1,31 @@
 .container {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 60px 20px;
 }
 
 .header {
-  text-align: center;
   margin-bottom: 50px;
+  text-align: center;
 }
 
-.header h2 {
+.title {
   font-size: 2.5rem;
-  margin-bottom: 15px;
-  color: var(--forest-green);
+  margin: 10px 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .header h2 {
-    color: var(--sunset-orange);
-  }
-}
-
-.header p {
+.subtitle {
+  opacity: 0.6;
   font-size: 1.1rem;
-  opacity: 0.8;
   max-width: 600px;
   margin: 0 auto;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
-  margin-bottom: 40px;
+  margin-bottom: 60px;
 }
 
 .card {
@@ -45,104 +38,240 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
-.icon {
-  font-size: 2.5rem;
+.iconBox {
+  width: 48px;
+  height: 48px;
+  background: var(--forest-green-glow);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cardHeader h3 {
-  font-size: 1.3rem;
-  line-height: 1.3;
+  margin: 0;
+  font-size: 1.2rem;
 }
 
 .description {
+  font-size: 0.95rem;
+  line-height: 1.6;
   opacity: 0.8;
-  line-height: 1.5;
   margin-bottom: 20px;
 }
 
 .divider {
   height: 1px;
-  background: rgba(0,0,0,0.1);
+  background: var(--glass-border);
   margin-bottom: 20px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .divider {
-    background: rgba(255,255,255,0.1);
-  }
 }
 
 .articleList {
   list-style: none;
+  padding: 0;
+  margin: 0 0 30px 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
 }
 
-.articleList a {
-  color: var(--foreground);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
-  display: inline-block;
-}
-
-.articleList a:hover {
-  color: var(--sunset-orange);
+.articleList li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 .readMoreBtn {
-  margin-top: 25px;
+  margin-top: auto;
   background: transparent;
   border: none;
   color: var(--forest-green);
+  font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 1rem;
-  font-family: inherit;
   cursor: pointer;
-  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  transition: gap 0.2s;
+}
+
+.readMoreBtn:hover {
+  gap: 12px;
+}
+
+/* Seasonal Section */
+.seasonalSection {
+  padding: 40px;
+  margin-bottom: 60px;
+}
+
+.seasonalHeader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.calendarIcon {
+  width: 60px;
+  height: 60px;
+  background: var(--sunset-orange);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 20px var(--sunset-glow);
+}
+
+.monthLabel {
+  background: rgba(0,0,0,0.1);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px;
+  text-align: center;
+}
+
+.dayLabel {
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 800;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tipsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.tipCard {
+  background: rgba(0,0,0,0.03);
+  padding: 20px;
+  border-radius: var(--radius-md);
 }
 
 @media (prefers-color-scheme: dark) {
-  .readMoreBtn {
-    color: var(--sunset-orange);
-  }
+  .tipCard { background: rgba(255,255,255,0.03); }
 }
 
+.tipCategory {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--sunset-orange);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tipCard h4 {
+  margin: 8px 0;
+}
+
+.tipCard p {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+
+/* Ask Community */
 .askCommunity {
+  padding: 40px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 30px 40px;
-  background: linear-gradient(135deg, rgba(45, 90, 39, 0.1) 0%, rgba(255, 140, 66, 0.1) 100%);
+  align-items: center;
+  gap: 30px;
+}
+
+.askContent {
+  display: flex;
+  gap: 20px;
+  align-items: center;
 }
 
 .askContent h3 {
-  font-size: 1.4rem;
-  margin-bottom: 10px;
+  margin: 0 0 5px 0;
 }
 
 .askContent p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modalContent {
+  width: 100%;
+  max-width: 700px;
+  padding: 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.modalIconBox {
+  width: 60px;
+  height: 60px;
+  background: var(--forest-green-glow);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modalBody h3 {
+  margin: 25px 0 15px;
+}
+
+.modalBody p, .modalBody li {
+  line-height: 1.6;
   opacity: 0.8;
-  max-width: 500px;
+}
+
+.modalBody ol, .modalBody ul {
+  padding-left: 20px;
 }
 
 @media (max-width: 768px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .askCommunity {
-    flex-direction: column;
-    text-align: center;
-    gap: 20px;
-  }
-  
-  .header h2 {
-    font-size: 2rem;
-  }
+  .askCommunity { flex-direction: column; text-align: center; }
+  .askContent { flex-direction: column; }
+  .seasonalSection { padding: 24px; }
+  .modalContent { padding: 24px; }
 }

@@ -29,8 +29,8 @@
 
 ### Phase 4: Topluluk Ruhu (Social Feed & Content)
 - [x] 'Yol Manzarası' (Image feed) UI
-- [ ] 'Askıda Not' (Geographic notes) Logic
-- [ ] 'İz Bırak' (Route sharing) Logic
+- [x] 'Askıda Not' (Geographic notes) Logic
+- [x] 'İz Bırak' (Route sharing) Logic
 
 ### Phase 5: Pazaryeri ve Bilgi Merkezi
 - [x] Second-hand equipment marketplace UI
@@ -50,3 +50,4 @@
 
 ## Progress Log
 - [2026-04-30] Created task_plan.md and initialized project vision.
+- [2026-05-01] Schema v4: messages + profile trigger + notes/routes; Askıda Not & İz Bırak özellikleri tamamlandı.

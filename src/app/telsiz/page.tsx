@@ -4,8 +4,13 @@ import styles from './telsiz.module.css';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useToast } from '@/components/Toast';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { IconRadio, IconSOS, IconUser, IconChat, IconHeart } from '@/components/Icons';
 
 export default function TelsizPage() {
+  const { showToast } = useToast();
+  const scrollRef = useScrollReveal();
   const [activeChannel, setActiveChannel] = useState('Kamp 1');
   const [isPrivate, setIsPrivate] = useState(false);
   const [privateUser, setPrivateUser] = useState<any>(null); // For DMs
@@ -43,7 +48,6 @@ export default function TelsizPage() {
       .or(`user_id.eq.${user.id},friend_id.eq.${user.id}`);
     
     if (data) {
-      // Map friendships to get a clean list of friend IDs
       const friends = data.map(f => f.user_id === user.id ? f.friend_id : f.user_id);
       setFriendships(friends);
     }
@@ -57,12 +61,10 @@ export default function TelsizPage() {
 
   // Presence & Nudge Channel
   useEffect(() => {
-    if (!user) return;
-
-    // Presence Channel
+    const presenceId = user?.id || `guest_${Math.random().toString(36).substring(7)}`;
     const roomOne = supabase.channel('online-users', {
       config: {
-        presence: { key: user.id },
+        presence: { key: presenceId },
       },
     });
 
@@ -74,51 +76,66 @@ export default function TelsizPage() {
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {
-          await roomOne.track({ online_at: new Date().toISOString() });
+          await roomOne.track({ online_at: new Date().toISOString(), is_guest: !user });
         }
       });
 
-    // Nudge (Broadcast) Channel
-    const nudgeChannel = supabase.channel(`nudge_${user.id}`);
-    nudgeChannel
-      .on('broadcast', { event: 'nudge' }, (payload) => {
-        // Trigger vibration
-        if (navigator.vibrate) {
-          navigator.vibrate([200, 100, 200]);
-        }
-        setNudgeAlert(`${payload.payload.fromName} seni dürttü! 👉`);
-        setTimeout(() => setNudgeAlert(null), 5000);
-      })
-      .subscribe();
+    let nudgeChannel: any = null;
+    if (user) {
+      nudgeChannel = supabase.channel(`nudge_${user.id}`);
+      nudgeChannel
+        .on('broadcast', { event: 'nudge' }, (payload: any) => {
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          showToast(`${payload.payload.fromName} seni dürttü! 👉`, "info");
+        })
+        .subscribe();
+    }
 
     return () => {
       supabase.removeChannel(roomOne);
-      supabase.removeChannel(nudgeChannel);
+      if (nudgeChannel) supabase.removeChannel(nudgeChannel);
     };
   }, [user]);
 
   // Fetch Messages based on channel
   useEffect(() => {
     const fetchMessages = async () => {
-      let query = supabase.from('messages').select(`*, profiles (full_name)`);
-      
-      if (isPrivate && privateUser && user) {
-        // Build private channel ID consistently
-        const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        const p2 = Math.max(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
-        const dmChannel = `dm_${p1}_${p2}`;
-        query = query.eq('channel', dmChannel);
-      } else {
-        query = query.eq('channel', activeChannel);
-      }
+      try {
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        let query = supabase
+          .from('messages')
+          .select(`*, profiles (full_name, current_status, is_verified)`)
+          .gt('created_at', thirtyMinutesAgo);
+        
+        if (isPrivate && privateUser && user) {
+          const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
+          const p2 = Math.max(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
+          const dmChannel = `dm_${p1}_${p2}`;
+          query = query.eq('channel', dmChannel);
+        } else {
+          query = query.eq('channel', activeChannel);
+        }
 
-      const { data } = await query.order('created_at', { ascending: true }).limit(50);
-      if (data) setMessages(data);
+        await supabase.from('messages').delete().lt('created_at', thirtyMinutesAgo);
+
+        const { data, error } = await query.order('created_at', { ascending: true });
+        
+        if (error) {
+          console.error("Messages fetch error details:", error);
+          setMessages([]);
+        } else if (data) {
+          const thirtyMins = 30 * 60 * 1000;
+          const now = Date.now();
+          const filtered = data.filter(msg => Math.abs(now - new Date(msg.created_at).getTime()) < thirtyMins);
+          setMessages(filtered);
+        }
+      } catch (err) {
+        console.error("Unexpected error in fetchMessages:", err);
+      }
     };
 
     fetchMessages();
 
-    // Determine current channel name for subscription
     let currentChannelName = activeChannel;
     if (isPrivate && privateUser && user) {
         const p1 = Math.min(parseInt(user.id.replace(/-/g,'').substring(0,8), 16), parseInt(privateUser.id.replace(/-/g,'').substring(0,8), 16));
@@ -134,6 +151,10 @@ export default function TelsizPage() {
         table: 'messages',
         filter: `channel=eq.${currentChannelName}`
       }, async (payload) => {
+        const now = Date.now();
+        const thirtyMins = 30 * 60 * 1000;
+        if ((now - new Date(payload.new.created_at).getTime()) > thirtyMins) return;
+
         const { data: profileData } = await supabase
           .from('profiles')
           .select('full_name')
@@ -141,7 +162,10 @@ export default function TelsizPage() {
           .single();
           
         const newMsg = { ...payload.new, profiles: profileData };
-        setMessages((prev) => [...prev, newMsg]);
+        setMessages((prev) => {
+          const updated = [...prev, newMsg].filter(m => (now - new Date(m.created_at).getTime()) < thirtyMins);
+          return updated;
+        });
       })
       .subscribe();
 
@@ -178,23 +202,26 @@ export default function TelsizPage() {
 
     if (!error && !overrideText) {
       setNewMessage('');
+    } else if (error) {
+      showToast("Mesaj gönderilemedi.", "error");
     }
   };
 
   const handleAddFriend = async (friendId: string) => {
-    if (!user) return alert("Giriş yapmalısınız!");
+    if (!user) return showToast("Giriş yapmalısınız!", "warning");
     const { error } = await supabase.from('friendships').insert([
       { user_id: user.id, friend_id: friendId }
     ]);
     if (!error) {
       setFriendships([...friendships, friendId]);
+      showToast("Arkadaş eklendi!", "success");
     }
   };
 
   const handleNudge = async () => {
     if (!user || !privateUser) return;
     if (navigator.vibrate) {
-      navigator.vibrate(100); // tactile feedback for the sender
+      navigator.vibrate(100);
     }
     
     const myName = allUsers.find(u => u.id === user.id)?.full_name || 'Bir komşun';
@@ -206,21 +233,20 @@ export default function TelsizPage() {
       payload: { fromName: myName },
     });
     
-    // Also send a special message in the chat
     sendMessage(undefined, "👉 DÜRTÜYOR...");
+    showToast(`${privateUser.full_name} dürtüldü!`, "success");
   };
 
   const handleSOS = () => {
-    if (!user) {
-      alert("Acil durum bildirimi yapabilmek için lütfen giriş yapın.");
-      return;
-    }
+    if (!user) return showToast("Lütfen giriş yapın.", "warning");
+    
     const issue = prompt("Acil durumunuzu kısaca açıklayın (Örn: Çamura saplandım, Çekici lazım):");
     if (!issue) return; 
     
     setIsPrivate(false);
     setActiveChannel('Acil Durum');
     sendMessage(undefined, `🚨 ACİL DURUM: ${issue} | Konum: Yaklaşık konum tespit edildi.`, 'Acil Durum');
+    showToast("SOS Bildirimi Gönderildi!", "error");
   };
 
   const formatTime = (isoString: string) => {
@@ -229,16 +255,11 @@ export default function TelsizPage() {
   };
 
   return (
-    <div className={styles.container}>
-      {nudgeAlert && (
-        <div className={styles.nudgeAlert}>
-          {nudgeAlert}
-        </div>
-      )}
-
+    <div className={styles.container} ref={scrollRef}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
-          <h2>📻 Telsiz</h2>
+          <IconRadio size={32} color="var(--forest-green)" />
+          <h2>Telsiz</h2>
         </div>
         
         <div className={styles.channelList}>
@@ -249,15 +270,18 @@ export default function TelsizPage() {
               className={`${styles.channelBtn} ${!isPrivate && activeChannel === ch ? styles.activeChannel : ''}`}
               onClick={() => { setIsPrivate(false); setActiveChannel(ch); }}
             >
-              # {ch}
+              <span style={{opacity: 0.5}}>#</span> {ch}
             </button>
           ))}
           
           <h3 className={styles.mt20}>Karavancılar</h3>
           <div className={styles.friendsList}>
-            {allUsers.filter(u => u.id !== user?.id).map(u => {
-              const isOnline = onlineUsers.includes(u.id);
-              const isFriend = friendships.includes(u.id);
+            {allUsers
+              .filter(u => u.id !== user?.id)
+              .filter(u => onlineUsers.includes(u.id))
+              .map(u => {
+                const isOnline = onlineUsers.includes(u.id);
+                const isFriend = friendships.includes(u.id);
 
               return (
                 <div key={u.id} className={`${styles.friendCard} ${isPrivate && privateUser?.id === u.id ? styles.activeFriend : ''}`}>
@@ -276,7 +300,9 @@ export default function TelsizPage() {
                     <button className={styles.addFriendBtn} onClick={() => handleAddFriend(u.id)}>+ Ekle</button>
                   ) : (
                     <div className={styles.friendActions}>
-                      <button title="Mesaj Gönder" onClick={() => { setIsPrivate(true); setPrivateUser(u); }}>💬</button>
+                      <button title="Mesaj Gönder" onClick={() => { setIsPrivate(true); setPrivateUser(u); }}>
+                        <IconChat size={18} />
+                      </button>
                     </div>
                   )}
                 </div>
@@ -294,16 +320,31 @@ export default function TelsizPage() {
               <button className={styles.nudgeButton} onClick={handleNudge}>👉 Dürt</button>
             </div>
           ) : (
-            <h3># {activeChannel}</h3>
+            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+              <span className="pulse-dot"></span>
+              <h3># {activeChannel}</h3>
+            </div>
           )}
           
-          {!isPrivate && <button className={styles.sosButton} onClick={handleSOS}>🚨 Acil Durum Bildir</button>}
+          {!isPrivate && (
+            <button className={styles.sosButton} onClick={handleSOS}>
+              <IconSOS size={18} color="white" /> SOS Bildir
+            </button>
+          )}
         </div>
 
         <div className={styles.messagesContainer}>
           <div className={styles.dateSeparator}>{isPrivate ? 'Özel Yazışma' : 'Canlı Yayın Aktif'}</div>
           
-          {messages.map((msg) => {
+          {messages
+            .filter(msg => {
+              const text = msg.text.toLowerCase();
+              if (text === 'aaa' || text === 'aaaaaaaaa') return false;
+              const now = Date.now();
+              const thirtyMins = 30 * 60 * 1000;
+              return Math.abs(now - new Date(msg.created_at).getTime()) < thirtyMins;
+            })
+            .map((msg) => {
             const isMe = user?.id === msg.user_id;
             const senderName = isMe ? 'Sen' : (msg.profiles?.full_name || 'Gizli Karavancı');
             const isSOS = msg.text.includes('🚨 ACİL DURUM');
@@ -311,14 +352,22 @@ export default function TelsizPage() {
             
             return (
               <div key={msg.id} className={`${styles.messageWrapper} ${isMe ? styles.messageMe : styles.messageOther}`}>
-                {!isMe && <div className={styles.avatar}>{senderName.charAt(0)}</div>}
+                {!isMe && (
+                  <div className={styles.avatar} style={{width: '32px', height: '32px', fontSize: '0.8rem'}}>
+                    {senderName.charAt(0)}
+                  </div>
+                )}
                 <div className={styles.messageContent}>
-                  {!isMe && <span className={styles.senderName}>{senderName}</span>}
+                  {!isMe && (
+                    <span className={styles.senderName}>
+                      {senderName}
+                      {msg.profiles?.is_verified && <span className="badge badge-verified" style={{padding: '1px 6px', fontSize: '0.6rem'}}>✓</span>}
+                    </span>
+                  )}
                   <div 
-                    className={`${styles.messageBubble} ${isNudge ? styles.nudgeBubble : ''}`} 
-                    style={isSOS ? { border: '2px solid red', background: 'rgba(255,0,0,0.1)' } : {}}
+                    className={`${styles.messageBubble} ${isSOS ? styles.sosBubble : ''} ${isNudge ? styles.nudgeBubble : ''} glass-card`}
                   >
-                    {isSOS || isNudge ? <strong>{msg.text}</strong> : msg.text}
+                    {msg.text}
                   </div>
                   <span className={styles.messageTime}>{formatTime(msg.created_at)}</span>
                 </div>
@@ -330,7 +379,7 @@ export default function TelsizPage() {
 
         <div className={styles.inputArea}>
           {user ? (
-            <form onSubmit={sendMessage} style={{ display: 'flex', width: '100%', gap: '12px' }}>
+            <form onSubmit={sendMessage} className={styles.chatForm}>
               <input 
                 type="text" 
                 placeholder={isPrivate ? "Özel mesaj yaz..." : "Telsize anons geç..."}
@@ -338,15 +387,20 @@ export default function TelsizPage() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
               />
-              <button type="submit" className={styles.sendButton + " btn-primary"}>
+              <button type="submit" className="btn-primary">
                 Gönder
               </button>
             </form>
           ) : (
-            <div style={{width: '100%', textAlign: 'center', padding: '10px'}}>
-              Mesaj yazabilmek için lütfen <Link href="/gunluk" style={{color: 'var(--sunset-orange)', fontWeight: 'bold'}}>Giriş Yapın</Link>.
+            <div className={styles.loginPrompt}>
+              Mesaj yazabilmek için lütfen <Link href="/gunluk">Giriş Yapın</Link>.
             </div>
           )}
+        </div>
+        
+        <div className={styles.diagnostic}>
+          <span className="pulse-dot" style={{width: '6px', height: '6px'}}></span>
+          STRICT EPHEMERAL v2.1 • ONLINE: {onlineUsers.length}
         </div>
       </main>
     </div>
