@@ -22,7 +22,10 @@ export function useScrollReveal(threshold = 0.1) {
     );
 
     const el = ref.current;
-    if (el) {
+
+    const observeElements = () => {
+      if (!el) return;
+      
       // Observe the element itself
       if (el.classList.contains('reveal') || 
           el.classList.contains('reveal-left') || 
@@ -31,12 +34,26 @@ export function useScrollReveal(threshold = 0.1) {
         observer.observe(el);
       }
 
-      // Also observe child elements with reveal classes
+      // Observe child elements
       const children = el.querySelectorAll('.reveal, .reveal-left, .reveal-scale, .stagger-children');
       children.forEach(child => observer.observe(child));
+    };
+
+    observeElements();
+
+    // Use MutationObserver to handle dynamic content (e.g., navigation, auth state changes)
+    const mutationObserver = new MutationObserver(() => {
+      observeElements();
+    });
+
+    if (el) {
+      mutationObserver.observe(el, { childList: true, subtree: true });
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
   }, [threshold]);
 
   return ref;

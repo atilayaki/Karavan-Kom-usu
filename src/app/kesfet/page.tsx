@@ -60,6 +60,7 @@ export default function KesfetPage() {
       ]);
 
       if (spotsRes.data) {
+        console.log("Fetched Spots:", spotsRes.data); // DEBUG
         setSpots(spotsRes.data);
         setFilteredSpots(spotsRes.data);
       }
@@ -194,8 +195,13 @@ export default function KesfetPage() {
             <button className={styles.backBtn} onClick={() => setSelectedSpot(null)}>
               ← Geri Dön
             </button>
-            <div className={styles.detailImage} style={{ background: selectedSpot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)'}}>
-              {selectedSpot.category === 'Sakin Köşe' ? <IconCamp size={48} color="white" /> : <IconTool size={48} color="white" />}
+            <div className={styles.detailImage} style={{ 
+              backgroundImage: selectedSpot.image_url ? `url("${selectedSpot.image_url}")` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: selectedSpot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)'
+            }}>
+              {!selectedSpot.image_url && (selectedSpot.category === 'Sakin Köşe' ? <IconCamp size={48} color="white" /> : <IconTool size={48} color="white" />)}
             </div>
             <div className={styles.detailContent}>
               <span className={styles.detailCategory}>{selectedSpot.category}</span>
@@ -206,6 +212,15 @@ export default function KesfetPage() {
                 <h3>Hakkında</h3>
                 <p>{selectedSpot.description || 'Bu mekan için henüz detaylı bir açıklama eklenmemiş.'}</p>
               </div>
+
+              {selectedSpot.attributes && (
+                <div className={styles.attributesGrid}>
+                  {selectedSpot.attributes.water && <div className={styles.attrItem}>💧 Su Var</div>}
+                  {selectedSpot.attributes.electricity && <div className={styles.attrItem}>⚡ Elektrik Var</div>}
+                  {selectedSpot.attributes.wc && <div className={styles.attrItem}>🚽 WC Var</div>}
+                  {selectedSpot.attributes.pet_friendly && <div className={styles.attrItem}>🐾 Evcil Hayvan</div>}
+                </div>
+              )}
 
               <div className={styles.detailActions}>
                 <button className="btn-primary" style={{width: '100%'}}>Yol Tarifi Al</button>
@@ -262,8 +277,17 @@ export default function KesfetPage() {
                     className={styles.resultCard + " glass-card"}
                     onClick={() => setSelectedSpot(spot)}
                   >
-                    <div className={styles.cardImage} style={{ background: spot.category === 'Sakin Köşe' ? 'rgba(45, 90, 39, 0.1)' : 'rgba(255, 140, 66, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)' }}>
-                      {spot.category === 'Sakin Köşe' ? <IconCamp size={24} /> : <IconTool size={24} />}
+                    <div className={styles.cardImage} style={{ 
+                      backgroundImage: spot.image_url ? `url("${spot.image_url}")` : 'none',
+                      backgroundColor: spot.image_url ? 'transparent' : (spot.category === 'Sakin Köşe' ? 'rgba(45, 90, 39, 0.1)' : 'rgba(255, 140, 66, 0.1)'),
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      display: 'flex', 
+                      alignSelf: 'center',
+                      justifyContent: 'center', 
+                      color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)' 
+                    }}>
+                      {!spot.image_url && (spot.category === 'Sakin Köşe' ? <IconCamp size={24} /> : <IconTool size={24} />)}
                     </div>
                     <div className={styles.cardInfo}>
                       <h4>{spot.title}</h4>
@@ -272,6 +296,13 @@ export default function KesfetPage() {
                         <span>{spot.address || 'Konum belirtilmedi'}</span>
                         {distance && <span className={styles.distanceBadge}>{distance} km</span>}
                       </div>
+                      {spot.attributes && (
+                        <div className={styles.cardAttributes}>
+                          {spot.attributes.water && <span>💧</span>}
+                          {spot.attributes.electricity && <span>⚡</span>}
+                          {spot.attributes.wc && <span>🚽</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )})

@@ -7,6 +7,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import WeatherWidget from '@/components/WeatherWidget';
 import SeasonalTips from '@/components/SeasonalTips';
 import ActivityFeed from '@/components/ActivityFeed';
+import ChallengesWidget from '@/components/ChallengesWidget';
 import { IconTool, IconCamp, IconRadio, IconShop, IconBook, IconMap, IconCalendar, IconTrophy, IconCaravan } from '@/components/Icons';
 
 const HERO_IMAGES = [
@@ -113,6 +114,11 @@ export default function Home() {
         {/* ─── Seasonal Tips ─── */}
         <div className="reveal" style={{ transitionDelay: '100ms' }}>
           <SeasonalTips />
+        </div>
+
+        {/* ─── Weekly Challenges ─── */}
+        <div className="reveal" style={{ transitionDelay: '150ms' }}>
+          <ChallengesWidget />
         </div>
 
         {/* ─── Feature Cards ─── */}

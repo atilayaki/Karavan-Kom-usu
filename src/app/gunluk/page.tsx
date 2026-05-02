@@ -5,7 +5,8 @@ import { supabase } from '@/lib/supabase';
 import styles from './gunluk.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
-import { IconUser, IconMap, IconHeart, IconCamp, IconSOS } from '@/components/Icons';
+import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
+import { uploadImage } from '@/lib/uploadImage';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -16,16 +17,22 @@ export default function GunlukPage() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-    });
+      setAuthChecking(false);
+    };
+
+    checkAuth();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      setAuthChecking(false);
     });
 
     return () => subscription.unsubscribe();
@@ -72,6 +79,9 @@ export default function GunlukPage() {
   const [bio, setBio] = useState('');
   const [caravanType, setCaravanType] = useState('');
   const [username, setUsername] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [shareLocation, setShareLocation] = useState(false);
   
   // Karavan Garaj states
   const [batteryCapacity, setBatteryCapacity] = useState('');
@@ -83,11 +93,15 @@ export default function GunlukPage() {
   const [routesCount, setRoutesCount] = useState(0);
   const [friendsCount, setFriendsCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
+  const [xp, setXp] = useState(0);
+  const [userAchievements, setUserAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchProfile();
       fetchStats();
+      fetchAchievements();
+      handleCheckIn(session.user.id);
     }
   }, [session]);
 
@@ -120,7 +134,57 @@ export default function GunlukPage() {
       setSolarPanel(data.solar_panel || '');
       setWaterTank(data.water_tank || '');
       setHeatingSystem(data.heating_system || '');
+      setAvatarUrl(data.avatar_url || '');
+      setXp(data.xp || 0);
+      setShareLocation(data.share_location || false);
     }
+  };
+
+  const fetchAchievements = async () => {
+    if (!session?.user?.id) return;
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .select('achievement_id, earned_at, achievements(*)')
+      .eq('user_id', session.user.id);
+    
+    if (data) {
+      setUserAchievements(data);
+    }
+  };
+
+  const handleCheckIn = async (uid: string) => {
+    // Supabase RPC call for check_in_user function
+    const { error } = await supabase.rpc('check_in_user', { p_user_id: uid });
+    if (!error) {
+      // XP updated via trigger, refresh profile
+      fetchProfile();
+    }
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const url = await uploadImage(file);
+    if (url) {
+      setAvatarUrl(url);
+      // Hemen veritabanına da kaydet
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: url })
+        .eq('id', session.user.id);
+      
+      if (!error) {
+        showToast('Profil fotoğrafı güncellendi!', 'success');
+        setProfile((prev: any) => ({ ...prev, avatar_url: url }));
+      } else {
+        showToast('Hata: ' + error.message, 'error');
+      }
+    } else {
+      showToast('Görsel yüklenemedi.', 'error');
+    }
+    setIsUploading(false);
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -135,7 +199,9 @@ export default function GunlukPage() {
         battery_capacity: batteryCapacity,
         solar_panel: solarPanel,
         water_tank: waterTank,
-        heating_system: heatingSystem
+        heating_system: heatingSystem,
+        avatar_url: avatarUrl,
+        share_location: shareLocation
       })
       .eq('id', session.user.id);
       
@@ -148,13 +214,33 @@ export default function GunlukPage() {
     setLoading(false);
   };
 
+  if (authChecking) {
+    return (
+      <div className={styles.container} style={{flexDirection: 'column', gap: '20px'}}>
+        <div className="pulse-dot"></div>
+        <p style={{opacity: 0.6, fontSize: '0.9rem'}}>Yol durumu kontrol ediliyor...</p>
+      </div>
+    );
+  }
+
   if (session) {
     return (
-      <div className={styles.container} ref={scrollRef}>
-        <div className={styles.profileCard + " glass-card reveal"}>
+      <div className={styles.container} ref={scrollRef} key={session.user.id}>
+        <div className={styles.profileCard + " glass-card reveal visible"}>
           <div className={styles.profileHeader}>
-            <div className={styles.avatarLarge}>
-              {(profile?.full_name || 'K').charAt(0)}
+            <div className={styles.avatarWrapper}>
+              <div className={styles.avatarLarge}>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="Profil" className={styles.avatarImage} />
+                ) : (
+                  (profile?.full_name || profile?.username || 'K').charAt(0).toUpperCase()
+                )}
+                <label className={styles.avatarOverlay}>
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden disabled={isUploading} />
+                  <IconCamera size={24} color="white" />
+                  <span>{isUploading ? '...' : 'Değiştir'}</span>
+                </label>
+              </div>
             </div>
             <div className={styles.profileInfo}>
               <h2>{profile?.full_name || 'Komşu'}</h2>
@@ -167,39 +253,32 @@ export default function GunlukPage() {
             <div className={styles.levelInfo}>
               <div className={styles.levelBadge}>
                 <span>Seviye</span>
-                <strong>{Math.floor((routesCount * 2 + postsCount + friendsCount) / 5) + 1}</strong>
+                <strong>{Math.floor(xp / 100) + 1}</strong>
               </div>
               <div className={styles.progressContainer}>
                 <div className={styles.progressHeader}>
-                  <span>Karavancı Tecrübesi</span>
-                  <span>%{((routesCount * 2 + postsCount + friendsCount) % 5) * 20}</span>
+                  <span>Karavancı Tecrübesi ({xp} XP)</span>
+                  <span>%{xp % 100}</span>
                 </div>
                 <div className={styles.progressBar}>
                   <div 
                     className={styles.progressFill} 
-                    style={{ width: `${((routesCount * 2 + postsCount + friendsCount) % 5) * 20}%` }}
+                    style={{ width: `${xp % 100}%` }}
                   ></div>
                 </div>
               </div>
             </div>
 
             <div className={styles.badgesGrid}>
-              <div className={`${styles.badgeItem} ${routesCount > 0 ? styles.earned : ''}`}>
-                <div className={styles.badgeIcon}>📍</div>
-                <span>İlk Rota</span>
-              </div>
-              <div className={`${styles.badgeItem} ${friendsCount >= 5 ? styles.earned : ''}`}>
-                <div className={styles.badgeIcon}>🤝</div>
-                <span>Sosyal</span>
-              </div>
-              <div className={`${styles.badgeItem} ${postsCount >= 10 ? styles.earned : ''}`}>
-                <div className={styles.badgeIcon}>📸</div>
-                <span>Fenomen</span>
-              </div>
-              <div className={`${styles.badgeItem} ${profile?.is_verified ? styles.earned : ''}`}>
-                <div className={styles.badgeIcon}>🛡️</div>
-                <span>Güvenilir</span>
-              </div>
+              {userAchievements.map((ua: any) => (
+                <div key={ua.achievement_id} className={`${styles.badgeItem} ${styles.earned}`}>
+                  <div className={styles.badgeIcon}>{ua.achievements?.icon || '🏆'}</div>
+                  <span>{ua.achievements?.title}</span>
+                </div>
+              ))}
+              {userAchievements.length === 0 && (
+                <p className={styles.noBadgeText}>Henüz bir rozet kazanılmadı. Yola çık ve paylaş!</p>
+              )}
             </div>
           </div>
 
@@ -246,6 +325,13 @@ export default function GunlukPage() {
                   <option value="Campervan">Campervan</option>
                   <option value="Diğer">Diğer</option>
                 </select>
+              </div>
+              <div className={styles.inputGroup}>
+                <label>📍 Konum Paylaşımı</label>
+                <div className={styles.toggleRow} onClick={() => setShareLocation(!shareLocation)}>
+                  <div className={`${styles.toggle} ${shareLocation ? styles.toggleActive : ''}`}></div>
+                  <span>{shareLocation ? 'Yakındaki komşular beni görebilir' : 'Konumum gizli'}</span>
+                </div>
               </div>
             </div>
 

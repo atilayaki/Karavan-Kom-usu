@@ -17,6 +17,7 @@ export default function Navbar() {
           <Link href="/telsiz">Telsiz</Link>
           <Link href="/pazaryeri">Pazaryeri</Link>
           <Link href="/rehber">Rehber</Link>
+          <Link href="/etkinlikler">Etkinlikler</Link>
           <Link href="/gunluk" className={styles.profileBtn}>Günlüğüm</Link>
           <ThemeToggle />
         </div>

@@ -53,6 +53,12 @@ export default function Map({
     });
   }, []);
 
+  const isDarkMode = typeof document !== 'undefined' && document.body.classList.contains('dark-mode');
+
+  const tileUrl = isDarkMode 
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
   const validSpots = spots.filter(s => isValidLatLng(s?.lat, s?.lng));
   const validNotes = notes.filter(n => isValidLatLng(n?.lat, n?.lng));
 
@@ -63,8 +69,8 @@ export default function Map({
   return (
     <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 1 }}>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        url={tileUrl}
       />
       <MapEvents onMapClick={onMapClick} />
 
@@ -95,10 +101,20 @@ export default function Map({
           icon={spot.category === 'Sakin Köşe' ? icons.green : icons.red}
         >
           <Popup>
-            <div style={{ minWidth: '150px' }}>
-              <strong>{spot.title}</strong><br />
-              <span style={{ fontWeight: 600, fontSize: '0.8rem' }}>{spot.category}</span><br />
-              {spot.address && <div style={{ fontSize: '0.8rem', marginTop: '5px', opacity: 0.8 }}>📍 {spot.address}</div>}
+            <div style={{ minWidth: '180px' }}>
+              <strong style={{fontSize: '1rem'}}>{spot.title}</strong><br />
+              <span style={{ fontWeight: 700, color: spot.category === 'Sakin Köşe' ? '#2d5a27' : '#ff8c42' }}>{spot.category}</span>
+              
+              {spot.attributes && (
+                <div style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
+                  {spot.attributes.water && <span title="Su Var" style={{opacity: 1}}>💧</span>}
+                  {spot.attributes.electricity && <span title="Elektrik Var" style={{opacity: 1}}>⚡</span>}
+                  {spot.attributes.wc && <span title="WC Var" style={{opacity: 1}}>🚽</span>}
+                  {spot.attributes.pet_friendly && <span title="Evcil Hayvan Dostu" style={{opacity: 1}}>🐾</span>}
+                </div>
+              )}
+
+              {spot.address && <div style={{ fontSize: '0.8rem', marginTop: '8px', opacity: 0.8, borderTop: '1px solid #eee', paddingTop: '5px' }}>📍 {spot.address}</div>}
             </div>
           </Popup>
         </Marker>
@@ -110,7 +126,7 @@ export default function Map({
             <strong>📌 Askıda Not</strong><br />
             {note.note}<br />
             <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
-              Bırakan: {note.profile_full_name || note.profiles?.full_name || 'Gizli Karavancı'}
+              Bırakan: {note.profiles?.full_name || 'Gizli Karavancı'}
             </span>
           </Popup>
         </Marker>
@@ -128,12 +144,12 @@ export default function Map({
           <Polyline
             key={`route-${route.id}`}
             positions={positions}
-            pathOptions={{ color: '#FF8C42', weight: 4, opacity: 0.85 }}
+            pathOptions={{ color: '#FF8C42', weight: 4, opacity: 0.8 }}
           >
             <Popup>
               <strong>🛣️ {route.title}</strong><br />
               {route.start_location_name} ➔ {route.end_location_name}<br />
-              {route.description && <span style={{ fontSize: '0.8rem', opacity: 0.8 }}>{route.description}</span>}
+              {route.description && <p style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '5px' }}>{route.description}</p>}
             </Popup>
           </Polyline>
         );

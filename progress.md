@@ -67,5 +67,7 @@
 - [x] **Hata Giderimleri:** Telsiz sayfasındaki async/await useEffect hatası ve build uyarıları giderildi.
 - [x] **SEO & Meta:** OpenGraph etiketleri ve mobil viewport ayarları optimize edildi.
 - [x] **Pazaryeri Revizyonu:** Pazaryeri sayfası "Design Revolution" standartlarına (SVG ikonlar, premium grid, toast bildirimleri) taşındı.
-- [x] **Oyunlaştırma (Gamification):** Profil sayfasında seviye sistemi, tecrübe barı ve başarı rozetleri (badges) prototiplendi.
-- [x] **Dinamik İçerik:** `seasonal_tips` veri seti genişletildi ve ay bazlı içerik akışı optimize edildi.
+- [x] **Oyunlaştırma (Gamification):** Veritabanı seviyesinde XP takibi, otomatik puan kazanma tetikleyicileri ve gerçek rozet (Achievements) sistemi kuruldu (`v9 migration`). Profil sayfası canlı verilere bağlandı.
+- [x] **Etkinlikler (Events):** `/etkinlikler` sayfası ve veritabanı şeması (`v10 migration`) oluşturuldu. Karavancı buluşmaları, katılım sistemi ve etkinlik oluşturma (+50 XP ödüllü) özellikleri eklendi.
+- [x] **Hata Giderimi & Stabilite:** PWA yükleme butonundaki (InstallPWA) geçersiz iç içe buton (hydration) hatası giderildi. Profil fotoğrafı yükleme (`avatar_url`) ve anlık önizleme desteği eklendi.
+- [x] **useScrollReveal v2:** MutationObserver desteği ile dinamik yüklenen içeriklerin (filtreler, auth sonrası içerik vb.) otomatik olarak animasyonla gelmesi sağlandı.

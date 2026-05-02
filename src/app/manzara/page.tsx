@@ -65,24 +65,25 @@ export default function ManzaraPage() {
       if (filter === 'Askıda Notlar') {
         const { data, error } = await supabase
           .from('vw_geographic_notes')
-          .select('*, profiles(full_name)')
+          .select('*')
           .order('created_at', { ascending: false });
         if (error) {
-          console.error('Notes fetch error:', error);
+          console.error('Notes fetch error details:', error.message, error.details, error.hint);
           setNotes([]);
-          showToast("Notlar yüklenemedi.", "error");
+          showToast(`Notlar yüklenemedi: ${error.message}`, "error");
         } else {
           setNotes(data || []);
         }
       } else if (filter === 'İz Bırak (Rotalar)') {
         const { data, error } = await supabase
           .from('vw_routes')
-          .select('*, profiles!routes_user_id_fkey(full_name)')
+          .select('*')
           .order('created_at', { ascending: false });
         if (error) {
-          console.error('Routes fetch error:', error);
-          const fallback = await supabase.from('vw_routes').select('*').order('created_at', { ascending: false });
+          console.error('Routes fetch error details:', error.message, error.details);
+          const fallback = await supabase.from('routes').select('*').order('created_at', { ascending: false });
           setRoutes(fallback.data || []);
+          showToast(`Rotalar yüklenemedi: ${error.message}`, "error");
         } else {
           setRoutes(data || []);
         }
@@ -106,8 +107,9 @@ export default function ManzaraPage() {
           setPosts(res.data);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Unexpected error in fetchFeed:", err);
+      showToast("Beklenmedik bir hata: " + (err.message || 'Bilinmiyor'), "error");
     } finally {
       setLoading(false);
     }
@@ -248,7 +250,7 @@ export default function ManzaraPage() {
                         <div className={styles.avatar} style={{background: 'var(--forest-green-glow)'}}>📌</div>
                       </div>
                       <div>
-                        <h4>{n.profiles?.full_name || 'Gizli Karavancı'}</h4>
+                        <h4>{n.profile_full_name || 'Gizli Karavancı'}</h4>
                         <span className={styles.location}>📍 {n.location_name || 'Konum belirtilmedi'} • {formatTime(n.created_at)}</span>
                       </div>
                     </div>
@@ -274,7 +276,7 @@ export default function ManzaraPage() {
                         <div className={styles.avatar} style={{background: 'var(--sunset-glow)'}}>🛣️</div>
                       </div>
                       <div>
-                        <h4>{r.profiles?.full_name || 'Gizli Karavancı'}</h4>
+                        <h4>{r.profile_full_name || 'Gizli Karavancı'}</h4>
                         <span className={styles.location}>{r.start_location_name} ➔ {r.end_location_name} • {formatTime(r.created_at)}</span>
                       </div>
                     </div>

@@ -114,6 +114,20 @@
   font-size: 0.9rem;
 }
 
+.distanceBadge {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: var(--forest-green);
+  color: white;
+  font-size: 0.6rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 2px solid var(--nav-bg);
+  white-space: nowrap;
+  z-index: 5;
+}
+
 .statusDot {
   position: absolute;
   bottom: 0;

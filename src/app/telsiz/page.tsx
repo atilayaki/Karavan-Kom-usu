@@ -21,6 +21,7 @@ export default function TelsizPage() {
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [friendships, setFriendships] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [nudgeAlert, setNudgeAlert] = useState<string | null>(null);
@@ -62,8 +63,32 @@ export default function TelsizPage() {
   useEffect(() => {
     if (user) {
       fetchFriendships();
+      updateUserLocation();
     }
   }, [user]);
+
+  const updateUserLocation = async () => {
+    if (!navigator.geolocation) return;
+    
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      
+      // Update last_location in DB
+      await supabase.from('profiles').update({
+        last_location: `POINT(${longitude} ${latitude})`
+      }).eq('id', user.id);
+
+      // Fetch nearby neighbors
+      const { data, error } = await supabase.rpc('get_nearby_neighbors', {
+        p_user_id: user.id,
+        p_lat: latitude,
+        p_lng: longitude,
+        p_radius_km: 50
+      });
+
+      if (data) setNearbyUsers(data);
+    });
+  };
 
   // Presence & Nudge Channel
   useEffect(() => {
@@ -308,6 +333,28 @@ export default function TelsizPage() {
               );
             })}
           </div>
+
+          {nearbyUsers.length > 0 && (
+            <>
+              <h3 className={styles.mt20}>📍 Yakındaki Komşular</h3>
+              <div className={styles.friendsList}>
+                {nearbyUsers.map(u => (
+                  <div key={`nearby-${u.id}`} className={styles.friendCard}>
+                    <div className={styles.friendInfo}>
+                      <div className={styles.avatarWrap}>
+                        <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
+                        <div className={styles.distanceBadge}>{u.distance_km.toFixed(1)} km</div>
+                      </div>
+                      <div className={styles.friendDetails}>
+                        <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
+                        <span className={styles.friendType}>{u.caravan_type || 'Bilinmiyor'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </aside>
 
