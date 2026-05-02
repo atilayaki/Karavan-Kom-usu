@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS user_challenges (
 );
 
 -- 3. VIEWS
+DROP VIEW IF EXISTS vw_spots CASCADE;
 CREATE OR REPLACE VIEW vw_spots AS
 SELECT 
   id, title, description, category, address, image_url, attributes, created_by,
@@ -168,6 +169,7 @@ SELECT
   ST_X(location::geometry) as lng 
 FROM spots;
 
+DROP VIEW IF EXISTS vw_geographic_notes CASCADE;
 CREATE OR REPLACE VIEW vw_geographic_notes AS
 SELECT 
   gn.id, gn.user_id, gn.note, gn.location_name, gn.created_at,
@@ -177,6 +179,7 @@ SELECT
 FROM geographic_notes gn
 LEFT JOIN profiles p ON gn.user_id = p.id;
 
+DROP VIEW IF EXISTS vw_routes CASCADE;
 CREATE OR REPLACE VIEW vw_routes AS
 SELECT 
   r.id, r.user_id, r.title, r.description, r.start_location_name, r.end_location_name, r.created_at,
