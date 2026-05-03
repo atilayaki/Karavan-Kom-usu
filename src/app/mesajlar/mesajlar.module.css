@@ -1,0 +1,108 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 16px;
+  min-height: 80vh;
+}
+
+.inner { display: flex; flex-direction: column; gap: 16px; }
+
+.title { margin: 0 0 8px; font-size: 1.6rem; }
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.center a { color: var(--sunset-orange); font-weight: 700; }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty span { font-size: 3rem; }
+.empty p { margin: 0; opacity: 0.6; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+
+.convRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.convRow:hover {
+  border-color: var(--sunset-orange);
+  transform: translateX(4px);
+}
+
+.avatar {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.avatar img, .avatar span {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar span {
+  background: linear-gradient(135deg, var(--forest-green), var(--sunset-orange));
+  color: white;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.unreadDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--sunset-orange);
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary, #fff);
+}
+
+.convInfo { flex: 1; min-width: 0; }
+
+.convName {
+  font-weight: 700;
+  font-size: 0.92rem;
+  margin-bottom: 3px;
+}
+
+.convPreview {
+  font-size: 0.8rem;
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.convTime {
+  font-size: 0.72rem;
+  opacity: 0.4;
+  white-space: nowrap;
+}

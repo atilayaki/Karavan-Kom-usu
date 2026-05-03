@@ -7,6 +7,7 @@ import styles from './kesfet.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { useDebounce } from '@/hooks/useDebounce';
+import SpotReview from '@/components/SpotReview';
 import type { Spot, GeographicNote, Route, WeatherCurrent } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import {
@@ -61,13 +62,19 @@ export default function KesfetPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookmarkedSpots, setBookmarkedSpots] = useState<Set<number>>(new Set());
+  const [checkedInSpots, setCheckedInSpots] = useState<Set<number>>(new Set());
+  const [checkinCounts, setCheckinCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
-        supabase.from('bookmarks').select('item_id').eq('user_id', user.id).eq('item_type', 'spot').then(({ data }) => {
-          if (data) setBookmarkedSpots(new Set(data.map(b => b.item_id)));
+        Promise.all([
+          supabase.from('bookmarks').select('item_id').eq('user_id', user.id).eq('item_type', 'spot'),
+          supabase.from('spot_checkins').select('spot_id').eq('user_id', user.id),
+        ]).then(([bookRes, checkinRes]) => {
+          if (bookRes.data) setBookmarkedSpots(new Set(bookRes.data.map(b => b.item_id)));
+          if (checkinRes.data) setCheckedInSpots(new Set(checkinRes.data.map(c => c.spot_id)));
         });
       }
     });
@@ -102,6 +109,36 @@ export default function KesfetPage() {
   const spotNotes = selectedSpot
     ? notes.filter(n => n.location_name === selectedSpot.title)
     : [];
+
+  const toggleCheckin = async () => {
+    if (!user || !selectedSpot) return showToast('Check-in için giriş yapmalısınız.', 'info');
+    const isCheckedIn = checkedInSpots.has(selectedSpot.id);
+    const next = new Set(checkedInSpots);
+    if (isCheckedIn) {
+      next.delete(selectedSpot.id);
+      setCheckedInSpots(next);
+      setCheckinCounts(c => ({ ...c, [selectedSpot.id]: Math.max(0, (c[selectedSpot.id] || 1) - 1) }));
+      await supabase.from('spot_checkins').delete().eq('user_id', user.id).eq('spot_id', selectedSpot.id);
+      showToast('Check-in kaldırıldı.', 'info');
+    } else {
+      next.add(selectedSpot.id);
+      setCheckedInSpots(next);
+      setCheckinCounts(c => ({ ...c, [selectedSpot.id]: (c[selectedSpot.id] || 0) + 1 }));
+      await supabase.from('spot_checkins').upsert({ user_id: user.id, spot_id: selectedSpot.id }, { onConflict: 'user_id,spot_id' });
+      showToast('Check-in kaydedildi! 🏕️', 'success');
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedSpot) return;
+    supabase
+      .from('spot_checkins')
+      .select('*', { count: 'exact', head: true })
+      .eq('spot_id', selectedSpot.id)
+      .then(({ count }) => {
+        setCheckinCounts(c => ({ ...c, [selectedSpot.id]: count || 0 }));
+      });
+  }, [selectedSpot]);
 
   const fetchAllData = async () => {
     try {
@@ -338,18 +375,29 @@ export default function KesfetPage() {
                 </button>
                 <button
                   className="btn-secondary"
-                  style={{width: '100%', marginTop: '12px'}}
-                  onClick={() => user ? setIsNoteModalOpen(true) : showToast("Not bırakmak için giriş yapmalısınız!", "warning")}
+                  style={{width: '100%', marginTop: '12px', background: checkedInSpots.has(selectedSpot.id) ? 'var(--forest-green)' : undefined, color: checkedInSpots.has(selectedSpot.id) ? 'white' : undefined}}
+                  onClick={toggleCheckin}
                 >
-                  Askıda Not Bırak
+                  {checkedInSpots.has(selectedSpot.id) ? `🏕️ Konaklandı (${checkinCounts[selectedSpot.id] ?? '…'})` : `🏕️ Burada Konakla (${checkinCounts[selectedSpot.id] ?? '…'})`}
                 </button>
                 <button
                   className="btn-ghost"
-                  style={{width: '100%', marginTop: '12px', color: bookmarkedSpots.has(selectedSpot.id) ? 'var(--sunset-orange)' : undefined}}
+                  style={{width: '100%', marginTop: '8px'}}
+                  onClick={() => user ? setIsNoteModalOpen(true) : showToast("Not bırakmak için giriş yapmalısınız!", "warning")}
+                >
+                  📌 Askıda Not Bırak
+                </button>
+                <button
+                  className="btn-ghost"
+                  style={{width: '100%', marginTop: '8px', color: bookmarkedSpots.has(selectedSpot.id) ? 'var(--sunset-orange)' : undefined}}
                   onClick={toggleSpotBookmark}
                 >
                   {bookmarkedSpots.has(selectedSpot.id) ? '★ Favorilerde' : '☆ Favorilere Ekle'}
                 </button>
+              </div>
+
+              <div className={styles.detailSection}>
+                <SpotReview spotId={selectedSpot.id} />
               </div>
             </div>
           </div>

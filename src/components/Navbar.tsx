@@ -15,6 +15,8 @@ const NAV_ITEMS = [
   { href: '/pazaryeri', label: 'Pazaryeri', icon: '🛒' },
   { href: '/etkinlikler', label: 'Etkinlikler', icon: '📅' },
   { href: '/kamp-atesi', label: 'Kamp Ateşi', icon: '🔥' },
+  { href: '/mesajlar', label: 'Mesajlar', icon: '💬' },
+  { href: '/bakim', label: 'Bakım Takvimi', icon: '🔧' },
   { href: '/rehber', label: 'Rehber', icon: '📖' },
   { href: '/wrapped', label: 'Yıl Özeti', icon: '🏕️' },
   { href: '/gunluk', label: 'Günlüğüm', icon: '👤' },

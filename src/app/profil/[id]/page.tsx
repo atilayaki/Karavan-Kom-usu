@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import type { Profile, MarketplaceItem, Post, UserAchievement } from '@/lib/database.types';
 import { IconUser, IconCamp } from '@/components/Icons';
 import CityStickers from '@/components/CityStickers';
+import FollowButton from '@/components/FollowButton';
 import styles from './profil.module.css';
 
 type Tab = 'posts' | 'items' | 'achievements';
@@ -23,18 +24,28 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const [achievements, setAchievements] = useState<UserAchievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('posts');
-  const [stats, setStats] = useState({ posts: 0, items: 0, routes: 0 });
+  const [stats, setStats] = useState({ posts: 0, items: 0, routes: 0, followers: 0, following: 0 });
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
-      const [{ data: prof }, { data: postData }, { data: itemData }, { data: achData }, { count: routesCount }] = await Promise.all([
+      const [
+        { data: prof },
+        { data: postData },
+        { data: itemData },
+        { data: achData },
+        { count: routesCount },
+        { count: followersCount },
+        { count: followingCount },
+      ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', id).single(),
         supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
         supabase.from('marketplace_items').select('*').eq('user_id', id).order('created_at', { ascending: false }),
         supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', id),
         supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', id),
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', id),
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', id),
       ]);
 
       if (!mounted) return;
@@ -53,6 +64,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         posts: postData?.length || 0,
         items: itemData?.length || 0,
         routes: routesCount || 0,
+        followers: followersCount || 0,
+        following: followingCount || 0,
       });
       setLoading(false);
     })();
@@ -97,6 +110,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <div className={styles.nameRow}>
             <h1>{profile.full_name || 'Üye'}</h1>
             {profile.is_verified && <span className={styles.verifiedBadge}>✓ Doğrulanmış</span>}
+            <FollowButton
+              targetUserId={id}
+              onCountChange={d => setStats(s => ({ ...s, followers: s.followers + d }))}
+            />
           </div>
           {profile.username && <div className={styles.username}>@{profile.username}</div>}
           {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
@@ -111,12 +128,16 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
               <span className={styles.statLabel}>XP</span>
             </div>
             <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.posts}</span>
-              <span className={styles.statLabel}>Paylaşım</span>
+              <span className={styles.statValue}>{stats.followers}</span>
+              <span className={styles.statLabel}>Takipçi</span>
             </div>
             <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.items}</span>
-              <span className={styles.statLabel}>İlan</span>
+              <span className={styles.statValue}>{stats.following}</span>
+              <span className={styles.statLabel}>Takip</span>
+            </div>
+            <div className={styles.statBox}>
+              <span className={styles.statValue}>{stats.posts}</span>
+              <span className={styles.statLabel}>Paylaşım</span>
             </div>
             <div className={styles.statBox}>
               <span className={styles.statValue}>{stats.routes}</span>

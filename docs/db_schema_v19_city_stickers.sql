@@ -130,11 +130,13 @@ CREATE POLICY "user_city_stickers_read_all" ON user_city_stickers FOR SELECT USI
 INSERT INTO user_city_stickers (user_id, sticker_id)
 SELECT DISTINCT p.user_id, match_city_sticker(p.location_name)
 FROM posts p
-WHERE match_city_sticker(p.location_name) IS NOT NULL
+WHERE p.user_id IS NOT NULL
+  AND match_city_sticker(p.location_name) IS NOT NULL
 ON CONFLICT (user_id, sticker_id) DO NOTHING;
 
 INSERT INTO user_city_stickers (user_id, sticker_id)
 SELECT DISTINCT m.user_id, match_city_sticker(m.location_name)
 FROM marketplace_items m
-WHERE match_city_sticker(m.location_name) IS NOT NULL
+WHERE m.user_id IS NOT NULL
+  AND match_city_sticker(m.location_name) IS NOT NULL
 ON CONFLICT (user_id, sticker_id) DO NOTHING;

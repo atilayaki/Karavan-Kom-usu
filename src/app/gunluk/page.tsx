@@ -11,6 +11,7 @@ import type { Session } from '@supabase/supabase-js';
 import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
 import { uploadImage } from '@/lib/uploadImage';
 import KaravanQRCard from '@/components/KaravanQRCard';
+import OnboardingModal from '@/components/OnboardingModal';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -87,6 +88,7 @@ export default function GunlukPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [shareLocation, setShareLocation] = useState(false);
   const [showQRCard, setShowQRCard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Karavan Garaj states
   const [batteryCapacity, setBatteryCapacity] = useState('');
@@ -143,6 +145,10 @@ export default function GunlukPage() {
       setAvatarUrl(data.avatar_url || '');
       setXp(data.xp || 0);
       setShareLocation(data.share_location || false);
+      // Show onboarding for new users (no bio and no caravan_type set)
+      if (!data.bio && !data.caravan_type && !localStorage.getItem('onboarding_done')) {
+        setShowOnboarding(true);
+      }
     }
   };
 
@@ -233,6 +239,16 @@ export default function GunlukPage() {
   if (session) {
     return (
       <div className={styles.container} ref={scrollRef} key={session.user.id}>
+        {showOnboarding && (
+          <OnboardingModal
+            userId={session.user.id}
+            onDone={() => {
+              setShowOnboarding(false);
+              localStorage.setItem('onboarding_done', '1');
+              fetchProfile();
+            }}
+          />
+        )}
         <div className={styles.profileCard + " glass-card reveal visible"}>
           <div className={styles.profileHeader}>
             <div className={styles.avatarWrapper}>
