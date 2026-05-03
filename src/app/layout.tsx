@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import SidebarNav from "@/components/SidebarNav";
 import BottomNav from "@/components/BottomNav";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import InstallPWA from "@/components/InstallPWA";
@@ -60,6 +61,7 @@ export default function RootLayout({
           <div className="bg-shape bg-shape-2" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-3" aria-hidden="true"></div>
           <Navbar />
+          <SidebarNav />
           <VerifyEmailBanner />
           <main style={{ marginTop: 'calc(var(--nav-height) + env(safe-area-inset-top))', paddingBottom: 'calc(90px + env(safe-area-inset-bottom))', position: 'relative', zIndex: 1 }}>
             {children}

@@ -70,7 +70,7 @@ export default function ManzaraPage() {
         showToast("Link panoya kopyalandı!", "success");
       }
     } catch (err) {
-      console.log('Error sharing', err);
+      showToast("Paylaşım başarısız.", "error");
     }
   };
 
