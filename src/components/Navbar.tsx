@@ -92,6 +92,9 @@ export default function Navbar() {
 
         <div className={styles.actions}>
           <NotificationBell />
+          <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">
+            👤
+          </Link>
           <ThemeToggle />
         </div>
       </div>

@@ -188,6 +188,34 @@
   justify-self: end;
 }
 
+.profileBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  background: var(--glass-bg, rgba(255,255,255,0.5));
+  border: 1px solid var(--glass-border);
+  text-decoration: none;
+  transition: all 0.25s ease;
+  color: var(--forest-green);
+}
+
+.profileBtn:hover {
+  background: var(--forest-green);
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .profileBtn {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .container {
     grid-template-columns: auto 1fr auto;
