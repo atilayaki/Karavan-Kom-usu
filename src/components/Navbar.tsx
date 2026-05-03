@@ -156,8 +156,10 @@ export default function Navbar() {
           </Link>
 
           {/* Right actions */}
-          <div className={styles.actions}>
+          <div className={styles.bellWrapper}>
             <NotificationBell />
+          </div>
+          <div className={styles.actions}>
             <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">👤</Link>
             <ThemeToggle />
           </div>
