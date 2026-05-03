@@ -405,9 +405,18 @@
   opacity: 0.35;
 }
 
-/* ── Desktop: hamburger gizle ── */
+/* ── Desktop: hamburger gizle, logo ortala, actions sağa ── */
 @media (min-width: 769px) {
   .menuWrapper { display: none; }
+  .container {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .actions {
+    position: absolute;
+    right: 24px;
+  }
 }
 
 /* ── Mobile navbar sizing ── */
