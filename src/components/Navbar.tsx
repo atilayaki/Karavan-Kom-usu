@@ -45,7 +45,6 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
 
   useEffect(() => { setMounted(true); }, []);
@@ -69,14 +68,6 @@ export default function Navbar() {
     if (open) document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
-
-  const handleEnter = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setOpen(true);
-  };
-  const handleLeave = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 200);
-  };
 
   const drawer = (
     <div className={styles.drawerOverlay} onClick={() => setOpen(false)}>
@@ -123,12 +114,7 @@ export default function Navbar() {
         <div className={styles.container}>
 
           {/* Hamburger + desktop dropdown */}
-          <div
-            className={styles.menuWrapper}
-            ref={wrapperRef}
-            onMouseEnter={handleEnter}
-            onMouseLeave={handleLeave}
-          >
+          <div className={styles.menuWrapper} ref={wrapperRef}>
             <button
               className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ''}`}
               onTouchStart={(e) => { e.preventDefault(); setOpen(v => !v); }}

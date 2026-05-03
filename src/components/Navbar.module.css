@@ -226,6 +226,10 @@
   animation: drawerFadeIn 0.2s ease;
 }
 
+@media (min-width: 769px) {
+  .drawerOverlay { display: none !important; }
+}
+
 @keyframes drawerFadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
