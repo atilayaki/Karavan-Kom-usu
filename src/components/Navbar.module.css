@@ -209,11 +209,7 @@
 }
 
 @media (max-width: 768px) {
-  .profileBtn {
-    width: 42px;
-    height: 42px;
-    font-size: 1.1rem;
-  }
+  .profileBtn { display: none; }
 }
 
 /* ── Mobile drawer — Netflix style ── */
