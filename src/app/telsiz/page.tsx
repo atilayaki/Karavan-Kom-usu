@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import type { Message, Profile } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
 import { IconRadio, IconSOS, IconUser, IconChat, IconHeart } from '@/components/Icons';
 
 export default function TelsizPage() {
@@ -13,15 +15,15 @@ export default function TelsizPage() {
   const scrollRef = useScrollReveal();
   const [activeChannel, setActiveChannel] = useState('Kamp 1');
   const [isPrivate, setIsPrivate] = useState(false);
-  const [privateUser, setPrivateUser] = useState<any>(null); // For DMs
-  const [messages, setMessages] = useState<any[]>([]);
+  const [privateUser, setPrivateUser] = useState<Pick<Profile, 'id' | 'full_name' | 'caravan_type'> | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  
-  const [user, setUser] = useState<any>(null);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [friendships, setFriendships] = useState<any[]>([]);
+
+  const [user, setUser] = useState<User | null>(null);
+  const [allUsers, setAllUsers] = useState<Pick<Profile, 'id' | 'full_name' | 'caravan_type'>[]>([]);
+  const [friendships, setFriendships] = useState<string[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
-  const [nearbyUsers, setNearbyUsers] = useState<any[]>([]);
+  const [nearbyUsers, setNearbyUsers] = useState<Array<Pick<Profile, 'id' | 'full_name' | 'caravan_type'> & { distance_km: number }>>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [nudgeAlert, setNudgeAlert] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function TelsizPage() {
   }, [user]);
 
   const updateUserLocation = async () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation || !user) return;
     
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
@@ -187,7 +189,7 @@ export default function TelsizPage() {
           .eq('id', payload.new.user_id)
           .single();
           
-        const newMsg = { ...payload.new, profiles: profileData };
+        const newMsg = { ...payload.new, profiles: profileData } as Message;
         setMessages((prev) => {
           const updated = [...prev, newMsg].filter(m => (now - new Date(m.created_at).getTime()) < thirtyMins);
           return updated;

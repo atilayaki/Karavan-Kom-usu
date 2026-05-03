@@ -1,0 +1,144 @@
+.wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.bellBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  position: relative;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bellBtn:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+  .bellBtn:hover { background: rgba(255,255,255,0.08); }
+}
+
+.badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--sunset-orange);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 1;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 340px;
+  max-height: 460px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.clearBtn {
+  background: transparent;
+  border: none;
+  color: var(--sunset-orange);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  opacity: 0.5;
+  font-size: 0.9rem;
+}
+
+.list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.itemLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.item {
+  display: flex;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--glass-border);
+  transition: background 0.2s;
+}
+
+.item:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  .item:hover { background: rgba(255,255,255,0.03); }
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.unread .dot {
+  background: var(--sunset-orange);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.body p {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.body small {
+  opacity: 0.5;
+  font-size: 0.72rem;
+}
+
+@media (max-width: 500px) {
+  .panel { width: 300px; right: -60px; }
+}

@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './ActivityFeed.module.css';
+import type { Activity } from '@/lib/database.types';
 
 export default function ActivityFeed() {
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +16,7 @@ export default function ActivityFeed() {
     const channel = supabase
       .channel('public:activities')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, (payload) => {
-        setActivities(prev => [payload.new, ...prev].slice(0, 10));
+        setActivities(prev => [payload.new as Activity, ...prev].slice(0, 10));
       })
       .subscribe();
 

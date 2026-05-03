@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import styles from './gunluk.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import type { Profile, UserAchievement } from '@/lib/database.types';
+import type { Session } from '@supabase/supabase-js';
 import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
 import { uploadImage } from '@/lib/uploadImage';
 
@@ -16,7 +19,7 @@ export default function GunlukPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export default function GunlukPage() {
     showToast("Güvenli çıkış yapıldı.", "info");
   };
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [bio, setBio] = useState('');
   const [caravanType, setCaravanType] = useState('');
   const [username, setUsername] = useState('');
@@ -94,7 +97,7 @@ export default function GunlukPage() {
   const [friendsCount, setFriendsCount] = useState(0);
   const [postsCount, setPostsCount] = useState(0);
   const [xp, setXp] = useState(0);
-  const [userAchievements, setUserAchievements] = useState<any[]>([]);
+  const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -119,6 +122,7 @@ export default function GunlukPage() {
   };
 
   const fetchProfile = async () => {
+    if (!session?.user?.id) return;
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -163,7 +167,7 @@ export default function GunlukPage() {
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !session?.user?.id) return;
 
     setIsUploading(true);
     const url = await uploadImage(file);
@@ -188,6 +192,7 @@ export default function GunlukPage() {
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
+    if (!session?.user?.id) return;
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase
@@ -231,7 +236,7 @@ export default function GunlukPage() {
             <div className={styles.avatarWrapper}>
               <div className={styles.avatarLarge}>
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt="Profil" className={styles.avatarImage} />
+                  <Image fill src={avatarUrl} alt="Profil" style={{ objectFit: 'cover', borderRadius: '50%' }} sizes="100px" />
                 ) : (
                   (profile?.full_name || profile?.username || 'K').charAt(0).toUpperCase()
                 )}

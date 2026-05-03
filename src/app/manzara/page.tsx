@@ -7,22 +7,24 @@ import Link from 'next/link';
 import { uploadImage } from '@/lib/uploadImage';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import type { Post, GeographicNote, Route } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
 import { IconHeart, IconChat, IconMap, IconCamp, IconUser, IconBell, IconShare, IconTrash } from '@/components/Icons';
 
 export default function ManzaraPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
   const [filter, setFilter] = useState<'En Yeniler' | 'Popüler' | 'Askıda Notlar' | 'İz Bırak (Rotalar)'>('En Yeniler');
-  const [posts, setPosts] = useState<any[]>([]);
-  const [notes, setNotes] = useState<any[]>([]);
-  const [routes, setRoutes] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [notes, setNotes] = useState<GeographicNote[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState({ caption: '', location_name: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Comments state
@@ -30,9 +32,17 @@ export default function ManzaraPage() {
   const [newComment, setNewComment] = useState('');
   const [isCommenting, setIsCommenting] = useState(false);
 
+  // Likes state — set of post IDs the current user has liked
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        supabase.from('post_likes').select('post_id').eq('user_id', user.id).then(({ data }) => {
+          if (data) setLikedPosts(new Set(data.map(l => l.post_id)));
+        });
+      }
     });
   }, []);
 
@@ -129,10 +139,26 @@ export default function ManzaraPage() {
   };
 
   const handleLike = async (postId: number, currentLikes: number) => {
-    const { error } = await supabase.from('posts').update({ likes_count: currentLikes + 1 }).eq('id', postId);
-    if (!error) {
-      setPosts(posts.map(p => p.id === postId ? { ...p, likes_count: currentLikes + 1 } : p));
-      showToast("Beğenildi! ❤️", "success");
+    if (!user) return showToast("Beğenmek için giriş yapmalısınız.", "info");
+
+    const isLiked = likedPosts.has(postId);
+    const newLiked = new Set(likedPosts);
+    const delta = isLiked ? -1 : 1;
+
+    // Optimistic update
+    if (isLiked) newLiked.delete(postId); else newLiked.add(postId);
+    setLikedPosts(newLiked);
+    setPosts(posts.map(p => p.id === postId ? { ...p, likes_count: Math.max(currentLikes + delta, 0) } : p));
+
+    const { error } = isLiked
+      ? await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
+      : await supabase.from('post_likes').insert([{ post_id: postId, user_id: user.id }]);
+
+    if (error) {
+      // Rollback
+      setLikedPosts(likedPosts);
+      setPosts(posts.map(p => p.id === postId ? { ...p, likes_count: currentLikes } : p));
+      showToast("İşlem başarısız: " + error.message, "error");
     }
   };
 
@@ -177,20 +203,24 @@ export default function ManzaraPage() {
     if (!newComment.trim()) return;
 
     setIsCommenting(true);
-    const { error } = await supabase.from('comments').insert([
-      {
-        post_id: postId,
-        user_id: user.id,
-        comment: newComment
-      }
-    ]);
+    const commentText = newComment;
 
-    if (!error) {
-      showToast("Yorumunuz eklendi.", "success");
+    const { data, error } = await supabase
+      .from('comments')
+      .insert([{ post_id: postId, user_id: user.id, comment: commentText }])
+      .select('id, comment, created_at, profiles(full_name)')
+      .single();
+
+    if (!error && data) {
+      setPosts(prev => prev.map(p =>
+        p.id === postId
+          ? { ...p, comments: [...(p.comments || []), data as any] }
+          : p
+      ));
       setNewComment('');
-      fetchPosts();
+      showToast("Yorumunuz eklendi.", "success");
     } else {
-      showToast("Yorum eklenemedi: " + error.message, "error");
+      showToast("Yorum eklenemedi: " + (error?.message || ''), "error");
     }
     setIsCommenting(false);
   };
@@ -323,13 +353,19 @@ export default function ManzaraPage() {
 
                 <p className={styles.postText}>{post.caption}</p>
                 
-                <div className={styles.imageContainer}>
-                  <img src={post.image_url} alt="Manzara" className={styles.postImage} />
-                </div>
+                {post.image_url && (
+                  <div className={styles.imageContainer}>
+                    <img
+                      src={post.image_url}
+                      alt="Manzara"
+                      className={styles.postImage}
+                    />
+                  </div>
+                )}
 
                 <div className={styles.postFooter}>
                   <button className={styles.actionBtn} onClick={() => handleLike(post.id, post.likes_count)}>
-                    <IconHeart size={20} filled={post.likes_count > 0} color={post.likes_count > 0 ? 'var(--danger)' : 'currentColor'} /> 
+                    <IconHeart size={20} filled={likedPosts.has(post.id)} color={likedPosts.has(post.id) ? 'var(--danger)' : 'currentColor'} />
                     <span>{post.likes_count}</span>
                   </button>
                   <button 

@@ -5,11 +5,13 @@ import { supabase } from '@/lib/supabase';
 import styles from './ChallengesWidget.module.css';
 import { IconTrophy, IconCheck } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
+import type { Challenge, UserChallenge } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
 
 export default function ChallengesWidget() {
-  const [challenges, setChallenges] = useState<any[]>([]);
-  const [userChallenges, setUserChallenges] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [userChallenges, setUserChallenges] = useState<UserChallenge[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   const { showToast } = useToast();
 
   useEffect(() => {

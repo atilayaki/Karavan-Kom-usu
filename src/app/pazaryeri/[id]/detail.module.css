@@ -1,0 +1,214 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 20px;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 30px;
+  font-weight: 600;
+  opacity: 0.6;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.backLink:hover { opacity: 1; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.imageSection {
+  overflow: hidden;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imageSection img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  opacity: 0.3;
+  font-size: 1.2rem;
+}
+
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.categoryBadge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--forest-green);
+  background: var(--forest-green-glow);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+}
+
+.title {
+  font-size: 2rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.price {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--sunset-orange);
+}
+
+.meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+.sellerCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.sellerInfo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sellerAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--forest-green-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--forest-green);
+  flex-shrink: 0;
+}
+
+.sellerAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sellerName {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.sellerType {
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.activeBookmark {
+  color: var(--sunset-orange) !important;
+  border-color: var(--sunset-orange) !important;
+}
+
+.descriptionCard {
+  padding: 30px;
+  margin-bottom: 40px;
+}
+
+.descriptionCard h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+}
+
+.descriptionCard p {
+  line-height: 1.8;
+  opacity: 0.85;
+  white-space: pre-wrap;
+}
+
+.relatedSection h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+}
+
+.relatedGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.relatedCard {
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.3s ease;
+}
+
+.relatedCard:hover { transform: translateY(-4px); }
+
+.relatedImage {
+  height: 140px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.05);
+}
+
+.relatedImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.relatedBody {
+  padding: 14px;
+}
+
+.relatedBody h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relatedPrice {
+  font-weight: 800;
+  color: var(--sunset-orange);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .imageSection { height: 350px; }
+  .title { font-size: 1.5rem; }
+  .price { font-size: 1.8rem; }
+}

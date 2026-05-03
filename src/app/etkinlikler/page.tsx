@@ -1,19 +1,24 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import styles from './etkinlikler.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import type { Event } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
 import { IconCalendar, IconMap, IconUser, IconRadio } from '@/components/Icons';
+import EventsCalendar from '@/components/EventsCalendar';
 
 export default function EtkinliklerPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [view, setView] = useState<'list' | 'calendar'>('list');
 
   // New Event Form State
   const [newTitle, setNewTitle] = useState('');
@@ -94,14 +99,42 @@ export default function EtkinliklerPage() {
         </button>
       </header>
 
-      <div className={styles.grid}>
+      <div className={styles.viewToggle + ' reveal'}>
+        <button
+          className={view === 'list' ? styles.viewActive : ''}
+          onClick={() => setView('list')}
+        >
+          📋 Liste
+        </button>
+        <button
+          className={view === 'calendar' ? styles.viewActive : ''}
+          onClick={() => setView('calendar')}
+        >
+          🗓️ Takvim
+        </button>
+      </div>
+
+      {view === 'calendar' && !loading && (
+        <div className="reveal">
+          <EventsCalendar
+            events={events}
+            onSelectEvent={(ev) => {
+              const card = document.getElementById(`event-${ev.id}`);
+              setView('list');
+              setTimeout(() => card?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+            }}
+          />
+        </div>
+      )}
+
+      <div className={styles.grid} style={{ display: view === 'list' ? undefined : 'none' }}>
         {loading ? (
           Array(4).fill(0).map((_, i) => <div key={i} className="shimmer" style={{height: '300px', borderRadius: '24px'}}></div>)
         ) : events.length === 0 ? (
           <div className={styles.emptyState}>Henüz planlanmış bir etkinlik yok. İlkini sen başlat!</div>
         ) : (
           events.map((ev) => (
-            <div key={ev.id} className={styles.eventCard + " glass-card reveal"}>
+            <div key={ev.id} id={`event-${ev.id}`} className={styles.eventCard + " glass-card reveal"}>
               <div className={styles.eventCategory}>{ev.category}</div>
               <h3>{ev.title}</h3>
               <p className={styles.description}>{ev.description}</p>
@@ -125,7 +158,7 @@ export default function EtkinliklerPage() {
                 <div className={styles.creator}>
                   <div className={styles.avatarMini}>
                     {ev.profiles?.avatar_url ? (
-                      <img src={ev.profiles.avatar_url} alt="C" />
+                      <Image fill src={ev.profiles.avatar_url} alt={ev.profiles?.full_name || 'Katılımcı'} style={{ objectFit: 'cover' }} sizes="32px" />
                     ) : (
                       (ev.profiles?.full_name || 'K').charAt(0)
                     )}

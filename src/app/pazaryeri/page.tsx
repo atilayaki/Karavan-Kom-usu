@@ -7,16 +7,20 @@ import Link from 'next/link';
 import { uploadImage } from '@/lib/uploadImage';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { useDebounce } from '@/hooks/useDebounce';
+import type { MarketplaceItem } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
 import { IconMap, IconSOS, IconHeart, IconUser, IconBell, IconBook } from '@/components/Icons';
 
 export default function PazaryeriPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<MarketplaceItem[]>([]);
   const [activeCategory, setActiveCategory] = useState('Tümü');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
 
   // Modal states
@@ -193,7 +197,7 @@ export default function PazaryeriPage() {
               {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton-loader" style={{height: '350px', borderRadius: '24px'}}></div>)}
             </div>
           ) : (() => {
-            const q = search.trim().toLowerCase();
+            const q = debouncedSearch.trim().toLowerCase();
             const visible = q
               ? products.filter(p =>
                   (p.title || '').toLowerCase().includes(q) ||
@@ -201,7 +205,7 @@ export default function PazaryeriPage() {
                   (p.location_name || '').toLowerCase().includes(q)
                 )
               : products;
-            
+
             if (visible.length === 0) return (
               <div className={styles.emptyState}>
                 <IconSOS size={48} color="var(--sunset-orange)" />
@@ -211,9 +215,11 @@ export default function PazaryeriPage() {
             );
 
             return visible.map((product) => (
-              <div key={product.id} className={styles.productCard + " glass-card reveal"}>
+              <Link href={`/pazaryeri/${product.id}`} key={product.id} className={styles.productCard + " glass-card reveal"} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className={styles.imageContainer}>
-                  <img src={product.image_url} alt={product.title} />
+                  {product.image_url && (
+                    <img src={product.image_url} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
                   <button 
                     className={`${styles.bookmarkBtn} ${bookmarks.has(product.id) ? styles.bookmarked : ''}`}
                     onClick={(e) => toggleBookmark(e, product.id)}
@@ -237,7 +243,7 @@ export default function PazaryeriPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ));
           })()}
         </main>

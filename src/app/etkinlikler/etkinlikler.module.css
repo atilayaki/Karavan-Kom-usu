@@ -4,6 +4,38 @@
   padding: 40px 20px;
 }
 
+.viewToggle {
+  display: inline-flex;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  margin-bottom: 30px;
+  gap: 4px;
+}
+
+.viewToggle button {
+  background: transparent;
+  border: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: inherit;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.viewToggle button:hover { opacity: 1; }
+
+.viewActive {
+  background: var(--forest-green) !important;
+  color: white !important;
+  opacity: 1 !important;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -113,6 +145,7 @@
   font-weight: 700;
   font-size: 0.8rem;
   overflow: hidden;
+  position: relative;
 }
 
 .avatarMini img {

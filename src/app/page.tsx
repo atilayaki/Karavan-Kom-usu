@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from "./page.module.css";
 import Link from "next/link";
+import { supabase } from '@/lib/supabase';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import WeatherWidget from '@/components/WeatherWidget';
 import SeasonalTips from '@/components/SeasonalTips';
@@ -16,22 +17,47 @@ const HERO_IMAGES = [
   'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?q=80&w=2000&auto=format&fit=crop'
 ];
 
-const STATS = [
-  { label: 'Karavancı', value: '2.4K+', icon: '🚐' },
-  { label: 'Konaklama Noktası', value: '850+', icon: '📍' },
-  { label: 'Uzman Usta', value: '120+', icon: '🔧' },
-  { label: 'Günlük Mesaj', value: '5K+', icon: '💬' },
-];
+const formatCount = (n: number): string => {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K+';
+  if (n >= 100) return Math.floor(n / 10) * 10 + '+';
+  return String(n);
+};
 
 export default function Home() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollRef = useScrollReveal();
+  const [stats, setStats] = useState([
+    { label: 'Karavancı', value: '—', icon: '🚐' },
+    { label: 'Konaklama Noktası', value: '—', icon: '📍' },
+    { label: 'Paylaşılan Manzara', value: '—', icon: '📸' },
+    { label: 'Aktif İlan', value: '—', icon: '🛒' },
+  ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
     }, 6000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const [users, spots, posts, items] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('spots').select('id', { count: 'exact', head: true }),
+        supabase.from('posts').select('id', { count: 'exact', head: true }),
+        supabase.from('marketplace_items').select('id', { count: 'exact', head: true }),
+      ]);
+      if (!mounted) return;
+      setStats([
+        { label: 'Karavancı', value: formatCount(users.count || 0), icon: '🚐' },
+        { label: 'Konaklama Noktası', value: formatCount(spots.count || 0), icon: '📍' },
+        { label: 'Paylaşılan Manzara', value: formatCount(posts.count || 0), icon: '📸' },
+        { label: 'Aktif İlan', value: formatCount(items.count || 0), icon: '🛒' },
+      ]);
+    })();
+    return () => { mounted = false; };
   }, []);
 
   return (
@@ -96,7 +122,7 @@ export default function Home() {
 
       {/* ─── Stats Bar ─── */}
       <section className={`${styles.statsBar} reveal`}>
-        {STATS.map((stat, i) => (
+        {stats.map((stat, i) => (
           <div key={i} className={styles.statItem}>
             <span className={styles.statIcon}>{stat.icon}</span>
             <span className={styles.statValue}>{stat.value}</span>

@@ -6,7 +6,20 @@ import { supabase } from '@/lib/supabase';
 import styles from './kesfet.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
-import { IconMap, IconCamp, IconTool, IconUser, IconBell } from '@/components/Icons';
+import { useDebounce } from '@/hooks/useDebounce';
+import type { Spot, GeographicNote, Route, WeatherCurrent } from '@/lib/database.types';
+import type { User } from '@supabase/supabase-js';
+import {
+  IconMap,
+  IconCamp,
+  IconTool,
+  IconUser,
+  IconBell,
+  IconSun,
+  IconCloud,
+  IconRain,
+  IconWind
+} from '@/components/Icons';
 
 // Dynamically import the Map component to prevent SSR errors with Leaflet
 const MapWithNoSSR = dynamic(() => import('@/components/Map'), {
@@ -21,13 +34,15 @@ const MapWithNoSSR = dynamic(() => import('@/components/Map'), {
 export default function KesfetPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
-  const [spots, setSpots] = useState<any[]>([]);
-  const [notes, setNotes] = useState<any[]>([]);
-  const [routes, setRoutes] = useState<any[]>([]);
-  const [filteredSpots, setFilteredSpots] = useState<any[]>([]);
+  const [spots, setSpots] = useState<Spot[]>([]);
+  const [notes, setNotes] = useState<GeographicNote[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [filteredSpots, setFilteredSpots] = useState<Spot[]>([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [activeFilter, setActiveFilter] = useState('Hepsi');
-  const [selectedSpot, setSelectedSpot] = useState<any>(null);
+  const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
+  const [weather, setWeather] = useState<WeatherCurrent | null>(null);
   
   // Location state
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -43,13 +58,50 @@ export default function KesfetPage() {
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [newRoute, setNewRoute] = useState({ title: '', desc: '', startName: '', endName: '' });
   
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookmarkedSpots, setBookmarkedSpots] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        supabase.from('bookmarks').select('item_id').eq('user_id', user.id).eq('item_type', 'spot').then(({ data }) => {
+          if (data) setBookmarkedSpots(new Set(data.map(b => b.item_id)));
+        });
+      }
+    });
     fetchAllData();
   }, []);
+
+  const toggleSpotBookmark = async () => {
+    if (!user || !selectedSpot) return showToast("Favoriye eklemek için giriş yapmalısınız.", "info");
+
+    const isBookmarked = bookmarkedSpots.has(selectedSpot.id);
+    const next = new Set(bookmarkedSpots);
+
+    if (isBookmarked) {
+      next.delete(selectedSpot.id);
+      setBookmarkedSpots(next);
+      await supabase.from('bookmarks').delete().eq('user_id', user.id).eq('item_type', 'spot').eq('item_id', selectedSpot.id);
+      showToast("Favorilerden kaldırıldı.", "info");
+    } else {
+      next.add(selectedSpot.id);
+      setBookmarkedSpots(next);
+      await supabase.from('bookmarks').insert([{ user_id: user.id, item_type: 'spot', item_id: selectedSpot.id }]);
+      showToast("Favorilere eklendi!", "success");
+    }
+  };
+
+  const openDirections = () => {
+    if (!selectedSpot) return;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedSpot.lat},${selectedSpot.lng}&travelmode=driving`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const spotNotes = selectedSpot
+    ? notes.filter(n => n.location_name === selectedSpot.title)
+    : [];
 
   const fetchAllData = async () => {
     try {
@@ -60,7 +112,6 @@ export default function KesfetPage() {
       ]);
 
       if (spotsRes.data) {
-        console.log("Fetched Spots:", spotsRes.data); // DEBUG
         setSpots(spotsRes.data);
         setFilteredSpots(spotsRes.data);
       }
@@ -92,24 +143,44 @@ export default function KesfetPage() {
       result = result.filter(s => s.category === activeFilter);
     }
     
-    if (search.trim() !== '') {
-      result = result.filter(s => 
-        s.title.toLowerCase().includes(search.toLowerCase()) || 
-        (s.address && s.address.toLowerCase().includes(search.toLowerCase()))
+    if (debouncedSearch.trim() !== '') {
+      result = result.filter(s =>
+        s.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        (s.address && s.address.toLowerCase().includes(debouncedSearch.toLowerCase()))
       );
     }
 
     if (activeFilter === 'Yakınımda' && userLocation) {
-      // Sort by distance
-      result.sort((a, b) => {
-        const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
-        const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
+      result = result.sort((spotA, spotB) => {
+        const distA = calculateDistance(userLocation.lat, userLocation.lng, spotA.lat ?? 0, spotA.lng ?? 0);
+        const distB = calculateDistance(userLocation.lat, userLocation.lng, spotB.lat ?? 0, spotB.lng ?? 0);
         return distA - distB;
       });
     }
 
     setFilteredSpots(result);
-  }, [search, activeFilter, spots, userLocation]);
+  }, [debouncedSearch, activeFilter, spots, userLocation]);
+
+  useEffect(() => {
+    if (!selectedSpot) return;
+    const controller = new AbortController();
+    setWeather(null);
+    fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${selectedSpot.lat}&longitude=${selectedSpot.lng}&current_weather=true`,
+      { signal: controller.signal }
+    )
+      .then(res => res.json())
+      .then(data => { if (data.current_weather) setWeather(data.current_weather); })
+      .catch(err => { if (err.name !== 'AbortError') console.error("Weather fetch error:", err); });
+    return () => controller.abort();
+  }, [selectedSpot]);
+
+  const getWeatherIcon = (code: number) => {
+    if (code <= 3) return <IconSun size={20} color="#FFD700" />;
+    if (code <= 50) return <IconCloud size={20} color="#A0A0A0" />;
+    if (code <= 80) return <IconRain size={20} color="#4A90E2" />;
+    return <IconWind size={20} color="#8E8E8E" />;
+  };
 
   const handleNearMe = () => {
     if (activeFilter === 'Yakınımda') {
@@ -213,6 +284,29 @@ export default function KesfetPage() {
                 <p>{selectedSpot.description || 'Bu mekan için henüz detaylı bir açıklama eklenmemiş.'}</p>
               </div>
 
+              <div className={styles.detailSection}>
+                <div className={styles.weatherWidget}>
+                  <div className={styles.weatherHeader}>
+                    <span>Anlık Hava Durumu</span>
+                    {weather ? getWeatherIcon(weather.weathercode) : <div className={styles.skeleton} />}
+                  </div>
+                  {weather ? (
+                    <div className={styles.weatherBody}>
+                      <div className={styles.weatherStat}>
+                        <span className={styles.statVal}>{Math.round(weather.temperature)}°C</span>
+                        <span className={styles.statLabel}>Sıcaklık</span>
+                      </div>
+                      <div className={styles.weatherStat}>
+                        <span className={styles.statVal}>{weather.windspeed} km/h</span>
+                        <span className={styles.statLabel}>Rüzgar</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p style={{fontSize: '0.8rem', opacity: 0.5}}>Yükleniyor...</p>
+                  )}
+                </div>
+              </div>
+
               {selectedSpot.attributes && (
                 <div className={styles.attributesGrid}>
                   {selectedSpot.attributes.water && <div className={styles.attrItem}>💧 Su Var</div>}
@@ -222,14 +316,39 @@ export default function KesfetPage() {
                 </div>
               )}
 
+              {spotNotes.length > 0 && (
+                <div className={styles.detailSection}>
+                  <h3>Komşu Notları ({spotNotes.length})</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {spotNotes.slice(0, 5).map(n => (
+                      <div key={n.id} style={{ padding: 12, background: 'rgba(0,0,0,0.03)', borderRadius: 12, fontSize: '0.9rem' }}>
+                        <div style={{ fontStyle: 'italic', marginBottom: 6 }}>"{n.note}"</div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                          — {n.profile_full_name || n.profiles?.full_name || 'Gizli Karavancı'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className={styles.detailActions}>
-                <button className="btn-primary" style={{width: '100%'}}>Yol Tarifi Al</button>
-                <button 
-                  className="btn-secondary" 
+                <button className="btn-primary" style={{width: '100%'}} onClick={openDirections}>
+                  🧭 Yol Tarifi Al
+                </button>
+                <button
+                  className="btn-secondary"
                   style={{width: '100%', marginTop: '12px'}}
                   onClick={() => user ? setIsNoteModalOpen(true) : showToast("Not bırakmak için giriş yapmalısınız!", "warning")}
                 >
                   Askıda Not Bırak
+                </button>
+                <button
+                  className="btn-ghost"
+                  style={{width: '100%', marginTop: '12px', color: bookmarkedSpots.has(selectedSpot.id) ? 'var(--sunset-orange)' : undefined}}
+                  onClick={toggleSpotBookmark}
+                >
+                  {bookmarkedSpots.has(selectedSpot.id) ? '★ Favorilerde' : '☆ Favorilere Ekle'}
                 </button>
               </div>
             </div>

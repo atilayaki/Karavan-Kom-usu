@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import InstallPWA from "@/components/InstallPWA";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ export default function RootLayout({
           </main>
           <BottomNav />
           <InstallPWA />
+          <ServiceWorkerRegistration />
         </ToastProvider>
       </body>
     </html>
