@@ -402,8 +402,18 @@
 }
 
 /* ── Desktop: hamburger gizle, logo ortala, actions sağa, zil sola ── */
+.bellLeft  { display: none; }
+.bellMobile { display: contents; }
+
 @media (min-width: 769px) {
   .menuWrapper { display: none; }
+  .bellLeft {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    left: 24px;
+  }
+  .bellMobile { display: none; }
   .container {
     display: flex;
     justify-content: center;
@@ -413,14 +423,6 @@
     position: absolute;
     right: 24px;
   }
-  .bellWrapper {
-    position: absolute;
-    left: 24px;
-  }
-}
-
-.bellWrapper {
-  display: contents;
 }
 
 /* ── Mobile navbar sizing ── */

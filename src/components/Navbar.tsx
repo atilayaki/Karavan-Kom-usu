@@ -156,10 +156,14 @@ export default function Navbar() {
           </Link>
 
           {/* Right actions */}
-          <div className={styles.bellWrapper}>
+          {/* Desktop: sol üst */}
+          <div className={styles.bellLeft}>
             <NotificationBell />
           </div>
+
           <div className={styles.actions}>
+            {/* Mobile: sağ üst */}
+            <div className={styles.bellMobile}><NotificationBell /></div>
             <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">👤</Link>
             <ThemeToggle />
           </div>
