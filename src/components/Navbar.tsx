@@ -80,20 +80,21 @@ export default function Navbar() {
           <button className={styles.drawerClose} onClick={() => setOpen(false)} aria-label="Kapat">✕</button>
         </div>
 
-        <div className={styles.drawerBody}>
-          {NAV_CATEGORIES.map(cat => (
-            <div key={cat.label} className={styles.drawerSection}>
-              <span className={styles.drawerSectionLabel}>{cat.label}</span>
-              <div className={styles.drawerGrid}>
+        <div className={styles.netflixBody}>
+          {NAV_CATEGORIES.map((cat, catIdx) => (
+            <div key={cat.label} className={styles.netflixRow}>
+              <span className={styles.netflixRowLabel}>{cat.label}</span>
+              <div className={styles.netflixScroll}>
                 {cat.items.map(item => (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`${styles.drawerItem} ${pathname === item.href ? styles.drawerItemActive : ''}`}
+                    data-cat={catIdx}
+                    className={`${styles.netflixCard} ${pathname === item.href ? styles.netflixCardActive : ''}`}
                     onClick={() => setOpen(false)}
                   >
-                    <span className={styles.drawerIcon}>{item.icon}</span>
-                    <span className={styles.drawerLabel}>{item.label}</span>
+                    <span className={styles.netflixCardIcon}>{item.icon}</span>
+                    <span className={styles.netflixCardTitle}>{item.label}</span>
                   </Link>
                 ))}
               </div>
