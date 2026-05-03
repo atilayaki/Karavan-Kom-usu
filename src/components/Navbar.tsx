@@ -62,10 +62,12 @@ export default function Navbar() {
   }, [open]);
 
   useEffect(() => {
+    if (!open) return;
+    if (window.matchMedia('(max-width: 768px)').matches) return;
     const onClickOutside = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
     };
-    if (open) document.addEventListener('mousedown', onClickOutside);
+    document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
