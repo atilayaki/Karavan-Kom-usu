@@ -61,7 +61,7 @@ export default function RootLayout({
           <div className="bg-shape bg-shape-3" aria-hidden="true"></div>
           <Navbar />
           <VerifyEmailBanner />
-          <main style={{ marginTop: 'var(--nav-height)', paddingBottom: '80px', position: 'relative', zIndex: 1 }}>
+          <main style={{ marginTop: 'calc(var(--nav-height) + env(safe-area-inset-top))', paddingBottom: 'calc(90px + env(safe-area-inset-bottom))', position: 'relative', zIndex: 1 }}>
             {children}
           </main>
           <BottomNav />
