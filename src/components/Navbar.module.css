@@ -307,9 +307,9 @@
   .drawerGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
+    gap: 6px;
     padding: 12px;
-    flex: 1;
+    align-content: start;
   }
 
   .drawerItem {
@@ -317,8 +317,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 14px 6px;
+    gap: 5px;
+    padding: 12px 4px;
     border-radius: 14px;
     text-decoration: none;
     color: inherit;
