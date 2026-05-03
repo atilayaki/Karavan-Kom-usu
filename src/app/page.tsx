@@ -9,6 +9,7 @@ import WeatherWidget from '@/components/WeatherWidget';
 import SeasonalTips from '@/components/SeasonalTips';
 import ActivityFeed from '@/components/ActivityFeed';
 import ChallengesWidget from '@/components/ChallengesWidget';
+import KomsuRadar from '@/components/KomsuRadar';
 import { IconTool, IconCamp, IconRadio, IconShop, IconBook, IconMap, IconCalendar, IconTrophy, IconCaravan } from '@/components/Icons';
 
 const HERO_IMAGES = [
@@ -204,6 +205,11 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {/* ─── Komşu Radarı ─── */}
+        <div className="reveal" style={{ transitionDelay: '180ms' }}>
+          <KomsuRadar />
+        </div>
 
         {/* ─── Activity Feed ─── */}
         <div className="reveal" style={{ transitionDelay: '200ms' }}>

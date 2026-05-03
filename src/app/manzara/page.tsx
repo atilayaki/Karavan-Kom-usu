@@ -10,6 +10,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import type { Post, GeographicNote, Route } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import { IconHeart, IconChat, IconMap, IconCamp, IconUser, IconBell, IconShare, IconTrash } from '@/components/Icons';
+import PolaroidStory from '@/components/PolaroidStory';
 
 export default function ManzaraPage() {
   const { showToast } = useToast();
@@ -34,6 +35,10 @@ export default function ManzaraPage() {
 
   // Likes state — set of post IDs the current user has liked
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set());
+
+  // Polaroid story mode
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [storyStartIndex, setStoryStartIndex] = useState(0);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -240,11 +245,18 @@ export default function ManzaraPage() {
             <span className="font-accent" style={{fontSize: '1.2rem', color: 'var(--sunset-orange)'}}>Topluluk Akışı</span>
             <h2 className={styles.title}>Yol Manzarası</h2>
           </div>
-          {user ? (
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>+ Manzara Paylaş</button>
-          ) : (
-            <Link href="/gunluk" className="btn-secondary" style={{textDecoration: 'none'}}>Aramıza Katıl</Link>
-          )}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {posts.some(p => p.image_url) && (
+              <button className="btn-ghost" onClick={() => { setStoryStartIndex(0); setStoryOpen(true); }}>
+                📸 Polaroid Modu
+              </button>
+            )}
+            {user ? (
+              <button className="btn-primary" onClick={() => setIsModalOpen(true)}>+ Manzara Paylaş</button>
+            ) : (
+              <Link href="/gunluk" className="btn-secondary" style={{textDecoration: 'none'}}>Aramıza Katıl</Link>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
@@ -354,7 +366,12 @@ export default function ManzaraPage() {
                 <p className={styles.postText}>{post.caption}</p>
                 
                 {post.image_url && (
-                  <div className={styles.imageContainer}>
+                  <div className={styles.imageContainer} onClick={() => {
+                    const visiblePosts = posts.filter(p => p.image_url);
+                    const idx = visiblePosts.findIndex(p => p.id === post.id);
+                    setStoryStartIndex(Math.max(idx, 0));
+                    setStoryOpen(true);
+                  }} style={{ cursor: 'pointer' }}>
                     <img
                       src={post.image_url}
                       alt="Manzara"
@@ -415,6 +432,15 @@ export default function ManzaraPage() {
           )}
         </div>
       </div>
+
+      {/* Polaroid Story */}
+      {storyOpen && (
+        <PolaroidStory
+          posts={posts}
+          startIndex={storyStartIndex}
+          onClose={() => setStoryOpen(false)}
+        />
+      )}
 
       {/* Add Post Modal */}
       {isModalOpen && (

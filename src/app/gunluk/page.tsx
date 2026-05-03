@@ -10,6 +10,7 @@ import type { Profile, UserAchievement } from '@/lib/database.types';
 import type { Session } from '@supabase/supabase-js';
 import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
 import { uploadImage } from '@/lib/uploadImage';
+import KaravanQRCard from '@/components/KaravanQRCard';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -85,6 +86,7 @@ export default function GunlukPage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [shareLocation, setShareLocation] = useState(false);
+  const [showQRCard, setShowQRCard] = useState(false);
   
   // Karavan Garaj states
   const [batteryCapacity, setBatteryCapacity] = useState('');
@@ -378,12 +380,23 @@ export default function GunlukPage() {
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? 'Güncelleniyor...' : 'Profili Kaydet'}
               </button>
+              <button type="button" onClick={() => setShowQRCard(true)} className="btn-secondary">
+                🚐 Karavan Kartım
+              </button>
               <button type="button" onClick={handleLogout} className="btn-ghost">
                 Oturumu Kapat
               </button>
             </div>
           </form>
         </div>
+
+        {showQRCard && profile && session?.user && (
+          <KaravanQRCard
+            profile={profile}
+            userId={session.user.id}
+            onClose={() => setShowQRCard(false)}
+          />
+        )}
       </div>
     );
   }

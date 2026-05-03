@@ -5,6 +5,8 @@ import BottomNav from "@/components/BottomNav";
 import VerifyEmailBanner from "@/components/VerifyEmailBanner";
 import InstallPWA from "@/components/InstallPWA";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import TimeOfDayTheme from "@/components/TimeOfDayTheme";
+import AmbientSound from "@/components/AmbientSound";
 import { ToastProvider } from "@/components/Toast";
 
 export const metadata: Metadata = {
@@ -52,6 +54,8 @@ export default function RootLayout({
     <html lang="tr" suppressHydrationWarning>
       <body>
         <ToastProvider>
+          <TimeOfDayTheme />
+          <div className="todOverlay" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-1" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-2" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-3" aria-hidden="true"></div>
@@ -62,6 +66,7 @@ export default function RootLayout({
           </main>
           <BottomNav />
           <InstallPWA />
+          <AmbientSound />
           <ServiceWorkerRegistration />
         </ToastProvider>
       </body>

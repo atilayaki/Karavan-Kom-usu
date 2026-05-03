@@ -1,0 +1,97 @@
+.wrapper {
+  padding: 24px 28px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.counter {
+  font-weight: 800;
+  background: var(--forest-green-glow);
+  color: var(--forest-green);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+}
+
+.subtitle {
+  margin: 0 0 18px;
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.regionBlock {
+  margin-bottom: 18px;
+}
+
+.regionBlock h4 {
+  margin: 0 0 10px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.5;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+}
+
+.sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  transition: all 0.25s ease;
+  cursor: default;
+  border: 1px dashed var(--glass-border);
+}
+
+.stickerEmoji {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.stickerName {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.earned {
+  background: linear-gradient(135deg, rgba(45,90,39,0.1), rgba(255,140,66,0.1));
+  border: 1px solid var(--sunset-orange);
+  transform: scale(1);
+  animation: earnedPulse 0.6s ease;
+}
+
+.earned:hover {
+  transform: scale(1.08) rotate(-3deg);
+}
+
+@keyframes earnedPulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.locked {
+  filter: grayscale(1);
+  opacity: 0.35;
+}
+
+.locked .stickerEmoji {
+  filter: blur(0.5px);
+}

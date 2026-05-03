@@ -14,7 +14,9 @@ const NAV_ITEMS = [
   { href: '/telsiz', label: 'Telsiz', icon: '📻' },
   { href: '/pazaryeri', label: 'Pazaryeri', icon: '🛒' },
   { href: '/etkinlikler', label: 'Etkinlikler', icon: '📅' },
+  { href: '/kamp-atesi', label: 'Kamp Ateşi', icon: '🔥' },
   { href: '/rehber', label: 'Rehber', icon: '📖' },
+  { href: '/wrapped', label: 'Yıl Özeti', icon: '🏕️' },
   { href: '/gunluk', label: 'Günlüğüm', icon: '👤' },
 ];
 
@@ -77,7 +79,11 @@ export default function Navbar() {
           )}
         </div>
 
-        <Link href="/" className={styles.logo}>
+        <Link
+          href="/"
+          className={styles.logo}
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
           <Logo className={styles.logoImage} />
           <span className={styles.logoText}>Karavan Komşusu</span>
         </Link>

@@ -7,6 +7,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { useToast } from '@/components/Toast';
 import type { Profile, MarketplaceItem, Post, UserAchievement } from '@/lib/database.types';
 import { IconUser, IconCamp } from '@/components/Icons';
+import CityStickers from '@/components/CityStickers';
 import styles from './profil.module.css';
 
 type Tab = 'posts' | 'items' | 'achievements';
@@ -137,6 +138,10 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           </div>
         </section>
       )}
+
+      <div className="reveal">
+        <CityStickers userId={id} />
+      </div>
 
       <div className={styles.tabBar + ' reveal'}>
         <button className={tab === 'posts' ? styles.tabActive : ''} onClick={() => setTab('posts')}>

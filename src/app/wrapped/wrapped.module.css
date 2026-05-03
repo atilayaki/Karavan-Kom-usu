@@ -1,0 +1,231 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  background: #0d1117;
+  color: white;
+}
+
+.loading, .notLoggedIn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px;
+}
+
+.loadingSpinner {
+  font-size: 3rem;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+/* ── Progress bars ── */
+.progressBar {
+  position: fixed;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  gap: 4px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.progressSegment {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: white;
+  border-radius: 99px;
+}
+
+@keyframes fillProgress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Nav buttons ── */
+.navPrev, .navNext {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  font-size: 2rem;
+  width: 44px;
+  height: 80px;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 100;
+  transition: background 0.2s;
+}
+.navPrev { left: 8px; }
+.navNext { right: 8px; }
+.navPrev:hover, .navNext:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Slide wrapper ── */
+.slide {
+  width: 100%;
+  max-width: 480px;
+  padding: 60px 32px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.92) translateY(20px);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.slide.revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+/* Per-slide background gradients */
+.intro    { background: radial-gradient(ellipse at center, rgba(45,90,39,0.4) 0%, transparent 70%); }
+.journey  { background: radial-gradient(ellipse at center, rgba(255,140,66,0.3) 0%, transparent 70%); }
+.posts    { background: radial-gradient(ellipse at center, rgba(135,206,235,0.3) 0%, transparent 70%); }
+.routes   { background: radial-gradient(ellipse at center, rgba(139,69,19,0.3) 0%, transparent 70%); }
+.city     { background: radial-gradient(ellipse at center, rgba(255,215,0,0.25) 0%, transparent 70%); }
+.xp       { background: radial-gradient(ellipse at center, rgba(148,0,211,0.3) 0%, transparent 70%); }
+.stickers { background: radial-gradient(ellipse at center, rgba(0,200,150,0.3) 0%, transparent 70%); }
+.finale   { background: radial-gradient(ellipse at center, rgba(255,215,0,0.4) 0%, transparent 60%); }
+
+.slideInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.bigEmoji {
+  font-size: 5rem;
+  line-height: 1;
+  animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes popIn {
+  from { transform: scale(0.3); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.wrappedLabel {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  opacity: 0.5;
+  margin: 0;
+}
+
+.slideInner h1 {
+  font-size: 2.2rem;
+  margin: 0;
+  line-height: 1.15;
+}
+
+.slideDesc {
+  font-size: 1rem;
+  opacity: 0.7;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tapHint {
+  font-size: 0.78rem;
+  opacity: 0.4;
+  margin-top: 8px;
+}
+
+.highlightNum {
+  font-size: 4.5rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ff8c42, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+  line-height: 1;
+}
+
+.statGrid {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 16px 20px;
+  min-width: 80px;
+}
+
+.statBig {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #ff8c42;
+}
+
+.statCard span:last-child {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.cityName {
+  font-size: 3rem !important;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd700, #ff8c42);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.levelBadge {
+  background: linear-gradient(135deg, #7b2ff7, #ff8c42);
+  padding: 8px 24px;
+  border-radius: 99px;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.finaleActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.shareBtn {
+  padding: 14px 28px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.shareBtn:hover { background: rgba(255,255,255,0.25); }

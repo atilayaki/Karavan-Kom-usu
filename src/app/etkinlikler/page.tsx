@@ -19,6 +19,7 @@ export default function EtkinliklerPage() {
   const [user, setUser] = useState<User | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const [celebratingId, setCelebratingId] = useState<number | null>(null);
 
   // New Event Form State
   const [newTitle, setNewTitle] = useState('');
@@ -77,6 +78,8 @@ export default function EtkinliklerPage() {
     if (error) {
       showToast('Zaten katıldın veya bir hata oluştu.', 'info');
     } else {
+      setCelebratingId(eventId);
+      setTimeout(() => setCelebratingId(null), 1800);
       showToast('Etkinliğe katıldın! Görüşmek üzere. 👋', 'success');
       fetchEvents();
     }
@@ -134,7 +137,19 @@ export default function EtkinliklerPage() {
           <div className={styles.emptyState}>Henüz planlanmış bir etkinlik yok. İlkini sen başlat!</div>
         ) : (
           events.map((ev) => (
-            <div key={ev.id} id={`event-${ev.id}`} className={styles.eventCard + " glass-card reveal"}>
+            <div key={ev.id} id={`event-${ev.id}`} className={`${styles.eventCard} glass-card reveal ${celebratingId === ev.id ? styles.celebrating : ''}`}>
+              {celebratingId === ev.id && (
+                <div className={styles.confetti} aria-hidden="true">
+                  {Array.from({ length: 18 }).map((_, i) => (
+                    <span key={i} className={styles.confettiPiece} style={{
+                      left: `${(i / 18) * 100}%`,
+                      animationDelay: `${i * 0.04}s`,
+                      background: ['#FF8C42', '#2D5A27', '#87CEEB', '#FFD700', '#C94B4B'][i % 5],
+                    }} />
+                  ))}
+                  <span className={styles.tentBadge}>⛺</span>
+                </div>
+              )}
               <div className={styles.eventCategory}>{ev.category}</div>
               <h3>{ev.title}</h3>
               <p className={styles.description}>{ev.description}</p>

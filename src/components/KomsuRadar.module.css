@@ -1,0 +1,225 @@
+.wrapper {
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.titleGroup h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.live {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #4ade80;
+  letter-spacing: 1px;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.sub {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.55;
+}
+
+/* ── Radar decoration ── */
+.radarWrap {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+}
+
+.radarRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--forest-green);
+  opacity: 0.2;
+  animation: radarExpand 3s linear infinite;
+}
+
+@keyframes radarExpand {
+  0%   { transform: scale(0.2); opacity: 0.4; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.radarSweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(45, 90, 39, 0.35) 60deg,
+    transparent 61deg
+  );
+  animation: radarRotate 4s linear infinite;
+}
+
+@keyframes radarRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.radarDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--forest-green);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px var(--forest-green);
+}
+
+/* ── User list ── */
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.userRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  animation: fadeInRow 0.4s ease both;
+}
+
+@keyframes fadeInRow {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.userRow:hover {
+  border-color: var(--sunset-orange);
+  background: rgba(255, 140, 66, 0.05);
+  transform: translateX(4px);
+}
+
+.avatarWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatarWrap img,
+.avatarFallback {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatarFallback {
+  background: linear-gradient(135deg, var(--forest-green), var(--sunset-orange));
+  color: white;
+  font-weight: 800;
+  font-size: 1rem;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onlineDot {
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
+  background: #4ade80;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary, #fff);
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  display: block;
+  font-weight: 700;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handle {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.badge {
+  font-size: 0.7rem;
+  background: var(--forest-green-glow);
+  color: var(--forest-green);
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.xp {
+  font-size: 0.72rem;
+  opacity: 0.5;
+  font-weight: 600;
+}
+
+.viewAll {
+  display: block;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--sunset-orange);
+  text-decoration: none;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.viewAll:hover {
+  background: rgba(255, 140, 66, 0.08);
+}

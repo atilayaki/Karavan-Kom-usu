@@ -536,3 +536,43 @@ input::placeholder, textarea::placeholder {
   h1 { font-size: 1.8rem !important; }
   h2 { font-size: 1.4rem !important; }
 }
+
+/* ─── Time-of-Day Atmosphere ─── */
+/* A subtle full-screen tinted overlay shifts with the day's hour. */
+.todOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: background 4s ease, opacity 4s ease;
+  opacity: 0.35;
+  mix-blend-mode: soft-light;
+}
+
+html[data-tod="dawn"] .todOverlay {
+  background: linear-gradient(180deg, #FFD8B6 0%, #FFA478 50%, transparent 100%);
+}
+html[data-tod="morning"] .todOverlay {
+  background: linear-gradient(180deg, #FFF6E0 0%, transparent 60%);
+  opacity: 0.2;
+}
+html[data-tod="afternoon"] .todOverlay {
+  background: linear-gradient(180deg, #B8E0F5 0%, transparent 60%);
+  opacity: 0.18;
+}
+html[data-tod="sunset"] .todOverlay {
+  background: linear-gradient(180deg, #FF8C42 0%, #C94B4B 60%, #4A1942 100%);
+  opacity: 0.25;
+}
+html[data-tod="night"] .todOverlay {
+  background: linear-gradient(180deg, #1a1a3a 0%, #0d1a2d 100%);
+  opacity: 0.4;
+}
+
+/* Subtle shift in accent saturation by time-of-day */
+html[data-tod="sunset"] {
+  --sunset-orange: #FF6E2A;
+}
+html[data-tod="night"] {
+  --forest-green-glow: rgba(135, 206, 235, 0.18);
+}
