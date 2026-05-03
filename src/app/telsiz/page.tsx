@@ -239,8 +239,14 @@ export default function TelsizPage() {
       { user_id: user.id, friend_id: friendId }
     ]);
     if (!error) {
-      setFriendships([...friendships, friendId]);
+      setFriendships(prev => [...prev, friendId]);
       showToast("Arkadaş eklendi!", "success");
+    } else if (error.code === '23505') {
+      // Already friends — sync local state
+      setFriendships(prev => [...prev, friendId]);
+      showToast("Zaten arkadaşsınız.", "info");
+    } else {
+      showToast("Eklenemedi: " + error.message, "error");
     }
   };
 
@@ -304,7 +310,6 @@ export default function TelsizPage() {
           <div className={styles.friendsList}>
             {allUsers
               .filter(u => u.id !== user?.id)
-              .filter(u => onlineUsers.includes(u.id))
               .map(u => {
                 const isOnline = onlineUsers.includes(u.id);
                 const isFriend = friendships.includes(u.id);
