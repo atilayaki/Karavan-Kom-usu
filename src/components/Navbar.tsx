@@ -131,6 +131,7 @@ export default function Navbar() {
           >
             <button
               className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ''}`}
+              onTouchStart={(e) => { e.preventDefault(); setOpen(v => !v); }}
               onClick={() => setOpen(v => !v)}
               aria-label="Menüyü aç"
               aria-expanded={open}
