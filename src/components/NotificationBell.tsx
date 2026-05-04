@@ -15,7 +15,7 @@ interface Notification {
   created_at: string;
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ align = 'right' }: { align?: 'left' | 'right' }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className={styles.panel + ' glass-card'}>
+        <div className={`${styles.panel} ${align === 'left' ? styles.alignLeft : styles.alignRight} glass-card`}>
           <div className={styles.panelHeader}>
             <strong>Bildirimler</strong>
             {items.length > 0 && (

@@ -43,7 +43,6 @@
 .panel {
   position: absolute;
   top: calc(100% + 12px);
-  right: 0;
   width: 340px;
   max-height: 460px;
   display: flex;
@@ -52,6 +51,14 @@
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0,0,0,0.15);
   animation: slideDown 0.2s ease;
+}
+
+.alignRight {
+  right: 0;
+}
+
+.alignLeft {
+  left: 0;
 }
 
 @keyframes slideDown {
@@ -140,5 +147,7 @@
 }
 
 @media (max-width: 500px) {
-  .panel { width: 300px; right: -60px; }
+  .panel { width: 280px; }
+  .alignRight { right: -10px; }
+  .alignLeft { left: -10px; }
 }
