@@ -188,7 +188,7 @@ export default function MesajlarPage() {
             </>
           ) : (
             <div className={styles.noChat}>
-              <IconChat size={64} opacity={0.1} />
+              <IconChat size={64} />
               <h3>Sohbete Başla</h3>
               <p>Bir arkadaşını seçerek mesajlaşmaya başlayabilirsin.</p>
             </div>

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import styles from './gunluk.module.css';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import Link from 'next/link';
 import type { Profile, UserAchievement } from '@/lib/database.types';
 import type { Session } from '@supabase/supabase-js';
 import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
