@@ -355,10 +355,8 @@ export default function TelsizPage() {
           <h3 className={styles.mt20}>Karavancılar</h3>
           <div className={styles.friendsList}>
             {allUsers
-              .filter(u => u.id !== user?.id && (onlineUsers.includes(u.id) || acceptedFriends.includes(u.id))) // Sadece online olanlar veya arkadaşlar görünsün
-              .filter(u => onlineUsers.includes(u.id)) // Kesin kural: Sadece online olanlar görünsün
+              .filter(u => u.id !== user?.id && onlineUsers.includes(u.id)) 
               .map(u => {
-                const isOnline = true; // Filtreden geçtiği için zaten online
                 const isAccepted = acceptedFriends.includes(u.id);
                 const isPending = pendingSent.includes(u.id);
                 const isIncoming = pendingReceived.some(r => r.senderId === u.id);
