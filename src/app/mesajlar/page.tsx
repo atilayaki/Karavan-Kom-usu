@@ -91,7 +91,7 @@ export default function MesajlarPage() {
       {
         sender_id: user.id,
         receiver_id: activeChat.id,
-        text: text
+        content: text
       }
     ]);
 
@@ -166,7 +166,7 @@ export default function MesajlarPage() {
                 {messages.map((msg, idx) => (
                   <div key={msg.id || idx} className={`${styles.msgWrapper} ${msg.sender_id === user.id ? styles.msgMe : styles.msgOther}`}>
                     <div className={styles.msgBubble}>
-                      {msg.text}
+                      {msg.content}
                     </div>
                     <span className={styles.time}>
                       {new Date(msg.created_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
