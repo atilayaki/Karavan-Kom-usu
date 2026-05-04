@@ -1,18 +1,19 @@
 .page {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 
 /* ─── Hero Section ─── */
 .hero {
   position: relative;
-  height: 100vh;
-  min-height: 600px;
+  height: 100dvh;
+  min-height: 540px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-top: calc(-1 * var(--nav-height));
+  /* Cancel layout's marginTop so hero sits flush behind translucent navbar */
+  margin-top: calc(-1 * (var(--nav-height) + env(safe-area-inset-top)));
 }
 
 .heroBg {
@@ -116,7 +117,7 @@
 /* Slider Dots */
 .sliderDots {
   position: absolute;
-  bottom: 100px;
+  bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 32px);
   z-index: 4;
   display: flex;
   gap: 10px;
@@ -145,7 +146,7 @@
 /* Scroll Indicator */
 .scrollIndicator {
   position: absolute;
-  bottom: 30px;
+  bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) - 30px);
   z-index: 4;
   left: 50%;
   transform: translateX(-50%);
@@ -352,4 +353,12 @@
   .ctaBannerContent h2 { font-size: 1.5rem; }
   .heroAccent { font-size: 1.1rem; }
   .scrollIndicator { display: none; }
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 1.9rem; }
+  .heroContent { padding: 0 16px; }
+  .ctaGroup { flex-direction: column; align-items: stretch; gap: 10px; }
+  .ctaGroup > * { width: 100%; justify-content: center; }
+  .sliderDots { bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px); }
 }

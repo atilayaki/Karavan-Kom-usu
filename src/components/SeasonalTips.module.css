@@ -1,6 +1,15 @@
 .tipsContainer {
-  margin-top: 50px;
-  margin-bottom: 50px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 480px) {
+  .tipsContainer { margin-top: 24px; margin-bottom: 24px; }
+  .header { margin-bottom: 18px; }
+  .header h3 { font-size: 1.2rem; }
+  .header p { font-size: 0.88rem; }
+  .tipsGrid { grid-template-columns: 1fr; gap: 12px; }
+  .tipCard { padding: 16px; }
 }
 
 .header {

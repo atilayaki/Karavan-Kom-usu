@@ -57,6 +57,7 @@
 
 .cell {
   aspect-ratio: 1;
+  min-height: 44px;
   position: relative;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);

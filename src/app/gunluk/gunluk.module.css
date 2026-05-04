@@ -1,9 +1,8 @@
 .container {
-  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 40px 20px;
+  padding: 28px 20px 24px;
   background-color: var(--page-bg);
   position: relative;
 }
@@ -263,10 +262,27 @@
 }
 
 @media (max-width: 640px) {
-  .profileHeader { flex-direction: column; text-align: center; }
-  .profileStats { grid-template-columns: 1fr; }
+  .profileHeader { flex-direction: column; text-align: center; gap: 18px; margin-bottom: 28px; }
+  .profileStats { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .inputGrid, .garageGrid { grid-template-columns: 1fr; }
   .profileActions { flex-direction: column; }
+  .profileActions button { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 16px 12px 24px; }
+  .profileCard { padding: 22px 18px; border-radius: 18px; }
+  .avatarLarge { width: 88px; height: 88px; font-size: 2rem; border-width: 3px; }
+  .profileInfo h2 { font-size: 1.3rem; }
+  .emailLabel { font-size: 0.82rem; }
+  .profileStats { gap: 8px; margin-bottom: 28px; }
+  .statBox { padding: 14px 8px; }
+  .sectionTitle { gap: 8px; }
+  .friendsModal { max-height: calc(100dvh - var(--nav-height) - 40px); }
+  .modalOverlay { padding: 12px; align-items: flex-end; }
+  .friendsModal { border-radius: 20px 20px 0 0; }
+  .authCard { margin-top: 16px; padding: 24px 18px; }
+  .inputGroup input, .inputGroup select, .inputGroup textarea { font-size: 16px; }
 }
 
 .noBadgeText {

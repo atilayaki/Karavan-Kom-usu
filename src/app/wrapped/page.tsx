@@ -38,12 +38,14 @@ export default function WrappedPage() {
   const [loading, setLoading] = useState(true);
   const [slide, setSlide] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const autoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
+      setUserId(user.id);
 
       const year = new Date().getFullYear();
       const yearStart = `${year}-01-01T00:00:00.000Z`;
@@ -279,10 +281,20 @@ export default function WrappedPage() {
               Bu yıl {stats.totalPosts} paylaşım, {stats.totalRoutes} rota ve {stats.stickers} şehir damgasıyla yolculuğun güzel geçti.
             </p>
             <div className={styles.finaleActions} onClick={e => e.stopPropagation()}>
-              <Link href="/profil" className="btn-primary">Profilime Git</Link>
+              <Link href={userId ? `/profil/${userId}` : '/gunluk'} className="btn-primary">Profilime Git</Link>
               <button
                 className={styles.shareBtn}
-                onClick={() => navigator.share?.({ title: `Karavan Komşusu ${year} Özeti`, text: `Bu yıl ${stats.totalPosts} paylaşım, ${stats.stickers} şehir damgası topladım!`, url: window.location.href })}
+                onClick={async () => {
+                  const payload = { title: `Karavan Komşusu ${year} Özeti`, text: `Bu yıl ${stats.totalPosts} paylaşım, ${stats.stickers} şehir damgası topladım!`, url: window.location.href };
+                  if (navigator.share) {
+                    try { await navigator.share(payload); } catch {}
+                  } else {
+                    try {
+                      await navigator.clipboard.writeText(payload.url);
+                      alert('Link kopyalandı!');
+                    } catch {}
+                  }
+                }}
               >
                 Paylaş
               </button>

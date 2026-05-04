@@ -1,20 +1,42 @@
+/* Mobile-first: stack the spot list below a shorter map */
 .container {
   display: flex;
-  height: calc(100vh - var(--nav-height));
-  overflow: hidden;
+  flex-direction: column;
   position: relative;
-  gap: 0 !important; /* Boşluğu kesinlikle sıfırla */
+  gap: 0 !important;
+  min-height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - 44px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
 
 .sidebar {
-  width: 320px; /* Daha dar panel */
+  width: 100%;
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
-  border-right: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   z-index: 20;
-  box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+  order: 2;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.06);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 901px) {
+  .container {
+    flex-direction: row;
+    height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - 44px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 320px;
+    flex: 0 0 320px;
+    border-top: none;
+    border-right: 1px solid var(--glass-border);
+    box-shadow: 10px 0 30px rgba(0,0,0,0.05);
+    order: 0;
+  }
 }
 
 .searchBox {
@@ -118,12 +140,21 @@
 }
 
 .mapArea {
-  flex: 1;
+  flex: 1 1 auto;
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
   width: 100%;
-  height: 100%;
+  min-height: 260px;
+  order: 1;
+}
+
+@media (min-width: 901px) {
+  .mapArea {
+    height: 100%;
+    min-height: 0;
+    order: 0;
+  }
 }
 
 .mapOverlay {
@@ -201,9 +232,10 @@
 
 .mapActions {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
+  top: 16px;
+  /* Avoid Leaflet zoom controls (top-right). Place on the LEFT side instead. */
+  left: 16px;
+  z-index: 500;
 }
 
 .activeDraw {
@@ -214,19 +246,33 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.55);
   backdrop-filter: blur(5px);
   z-index: 10000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  padding-top: max(20px, env(safe-area-inset-top));
+  padding-bottom: max(20px, calc(20px + env(safe-area-inset-bottom)));
 }
 
 .modalContent {
   width: 100%;
   max-width: 500px;
-  padding: 30px;
+  padding: 28px;
+  max-height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 480px) {
+  .modalOverlay { padding: 12px; align-items: flex-end; }
+  .modalContent {
+    padding: 20px 18px;
+    border-radius: 20px 20px 0 0;
+    max-height: calc(100dvh - var(--nav-height) - 24px);
+  }
 }
 
 .modalContent h3 {
@@ -319,46 +365,24 @@
   100% { opacity: 0.5; }
 }
 
-@media (max-width: 480px) {
-  .container { 
-    flex-direction: column; 
-    height: calc(100dvh - 152px); /* 64px TopNav + 88px BottomNav */
-  }
-  
-  .sidebar { 
-    width: 100%; 
-    height: 60%; /* Liste alanı */
-    border-right: none; 
-    border-top: 1px solid var(--glass-border); 
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
-    order: 2;
-  }
-  
-  .mapArea { 
-    height: 40%; /* Harita alanı */
-    width: 100%;
-    order: 1;
-  }
-
-  .resultsList {
-    padding: 8px 12px 20px;
-    gap: 12px;
-  }
-
+@media (max-width: 900px) {
+  .resultsList { padding: 10px 14px 16px; gap: 10px; }
   .resultCard {
     padding: 10px;
     background: var(--card-bg);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
   }
-  
-  .searchBox {
-    padding: 15px 15px 5px;
-  }
+  .searchBox { padding: 14px 14px 6px; }
+  .filters { padding: 6px 14px; }
+  .filters button { padding: 8px 14px; font-size: 0.82rem; min-height: 36px; }
+  .detailView { padding: 20px 14px; }
+  .detailImage { height: 200px; }
+  .mapActions { top: 10px; left: 10px; }
+  .mapActions :global(.btn-primary) { padding: 8px 14px; font-size: 0.82rem; }
+  .attributesGrid { grid-template-columns: 1fr; padding: 12px; }
 }
 
-@media (max-width: 900px) and (min-width: 481px) {
-  .container { flex-direction: column-reverse; }
-  .sidebar { width: 100%; height: 350px; border-right: none; border-top: 1px solid var(--glass-border); }
-  .mapArea { height: calc(100vh - 350px - var(--nav-height)); }
+@media (max-width: 480px) {
+  .detailImage { height: 160px; }
 }

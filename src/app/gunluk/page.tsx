@@ -137,7 +137,7 @@ export default function GunlukPage() {
     const uid = session.user.id;
     const [routesRes, friendsRes, postsRes] = await Promise.all([
       supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', uid),
-      supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${uid},friend_id.eq.${uid}`),
+      supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${uid},friend_id.eq.${uid}`).eq('status', 'accepted'),
       supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', uid),
     ]);
     setRoutesCount(routesRes.count || 0);
@@ -536,7 +536,6 @@ export default function GunlukPage() {
           </button>
         </form>
       </div>
-      <div style={{position:'fixed', bottom:10, right:10, fontSize:'10px', opacity:0.1, color:'white', pointerEvents:'none'}}>v3.2-forced</div>
     </div>
   );
 }

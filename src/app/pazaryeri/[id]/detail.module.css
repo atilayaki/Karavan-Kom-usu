@@ -1,7 +1,7 @@
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 32px 20px 24px;
 }
 
 .backLink {
@@ -207,8 +207,25 @@
 }
 
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
-  .imageSection { height: 350px; }
+  .layout { grid-template-columns: 1fr; gap: 24px; }
+  .imageSection { height: 320px; }
   .title { font-size: 1.5rem; }
   .price { font-size: 1.8rem; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 16px 12px 24px; }
+  .backLink { margin-bottom: 14px; font-size: 0.88rem; }
+  .imageSection { height: 220px; border-radius: 16px; }
+  .title { font-size: 1.25rem; }
+  .price { font-size: 1.5rem; }
+  .meta { gap: 10px; font-size: 0.82rem; }
+  .sellerCard { flex-direction: column; align-items: flex-start; gap: 14px; padding: 14px; }
+  .sellerCard a { width: 100%; text-align: center; }
+  .actions { flex-direction: column; }
+  .actions > * { width: 100%; justify-content: center; }
+  .descriptionCard { padding: 18px; margin-bottom: 24px; }
+  .relatedGrid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .relatedImage { height: 110px; }
+  .relatedBody { padding: 10px; }
 }

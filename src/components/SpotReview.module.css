@@ -28,18 +28,33 @@
 /* ── Stars ── */
 .stars {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
 .star {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   color: var(--glass-border);
   line-height: 1;
   transition: color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .star[role='button'] {
   cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: rgba(255,140,66,0.2);
+}
+
+@media (max-width: 480px) {
+  .star[role='button'] {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.5rem;
+  }
 }
 
 .starFilled {

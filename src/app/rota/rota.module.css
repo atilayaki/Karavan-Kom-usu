@@ -1,17 +1,50 @@
+/* Mobile-first: stack the form below the map */
 .container {
   display: flex;
-  height: calc(100vh - 80px);
-  overflow: hidden;
+  flex-direction: column;
   gap: 0 !important;
+  min-height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - 44px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
 
 .sidebar {
-  width: 320px;
-  min-width: 320px;
-  padding: 30px 24px;
+  width: 100%;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
   overflow-y: auto;
-  border-right: 1px solid var(--glass-border);
+  border-top: 1px solid var(--glass-border);
   background: var(--glass-bg);
+  order: 2;
+}
+
+.mapArea {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 280px;
+  position: relative;
+  margin: 0 !important;
+  padding: 0 !important;
+  order: 1;
+}
+
+@media (min-width: 901px) {
+  .container {
+    flex-direction: row;
+    height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - 44px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 0;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    padding: 30px 24px;
+    border-top: none;
+    border-right: 1px solid var(--glass-border);
+    order: 0;
+  }
+  .mapArea {
+    flex: 1;
+    height: 100%;
+    order: 0;
+  }
 }
 
 .header {
@@ -161,14 +194,6 @@
   margin-top: 8px;
 }
 
-.mapArea {
-  flex: 1;
-  position: relative;
-  height: 100%;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
 .mapLoading {
   display: flex;
   align-items: center;
@@ -177,17 +202,15 @@
   opacity: 0.5;
 }
 
-@media (max-width: 900px) {
-  .container {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-  .sidebar {
-    border-right: none;
-    border-bottom: 1px solid var(--glass-border);
-    height: auto;
-  }
-  .mapArea {
-    height: 60vh;
-  }
+@media (max-width: 480px) {
+  .header { margin-bottom: 16px; }
+  .header h1 { font-size: 1.2rem; }
+  .header p { font-size: 0.82rem; }
+  .controls { gap: 8px; margin-bottom: 16px; }
+  .placeInput input { font-size: 16px; padding: 12px; }
+  .summary { padding: 14px; margin-bottom: 16px; gap: 8px; }
+  .statValue { font-size: 1.2rem; }
+  .swapBtn { width: 44px; height: 44px; }
+  .saveActions { flex-direction: column; }
+  .saveActions > * { width: 100%; min-height: 44px; }
 }

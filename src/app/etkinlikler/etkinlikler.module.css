@@ -1,7 +1,7 @@
 .container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 28px 20px 24px;
 }
 
 .viewToggle {
@@ -298,7 +298,32 @@
 }
 
 @media (max-width: 640px) {
-  .header { flex-direction: column; text-align: center; gap: 20px; }
+  .header { flex-direction: column; text-align: center; gap: 20px; align-items: stretch; }
+  .header > div:first-child { text-align: left; }
+  .header h1 { font-size: 1.6rem; }
   .grid { grid-template-columns: 1fr; }
   .row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .container { padding: 16px 12px 24px; }
+  .viewToggle { width: 100%; justify-content: center; margin-bottom: 18px; }
+  .viewToggle button { flex: 1; padding: 10px 12px; min-height: 44px; }
+  .header { margin-bottom: 22px; gap: 14px; }
+  .grid { gap: 14px; }
+  .eventCard { padding: 18px; }
+  .eventCard h3 { font-size: 1.2rem; }
+  .description { margin-bottom: 16px; }
+  .details { gap: 8px; margin-bottom: 16px; padding-top: 10px; }
+  .footer { padding-top: 14px; }
+  .joinBtn { padding: 10px 18px; min-height: 44px; }
+  .modalOverlay { padding: 12px; align-items: flex-end; }
+  .modal {
+    padding: 22px 18px 26px;
+    border-radius: 20px 20px 0 0;
+    max-height: calc(100dvh - var(--nav-height) - 24px);
+    overflow-y: auto;
+  }
+  .modalActions { flex-direction: column; }
+  .modalActions > * { width: 100%; min-height: 44px; }
 }

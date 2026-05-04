@@ -10,7 +10,7 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { MarketplaceItem } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
-import { IconMap, IconSOS, IconHeart, IconUser, IconBell, IconBook } from '@/components/Icons';
+import { IconMap, IconSOS, IconHeart, IconUser } from '@/components/Icons';
 
 export default function PazaryeriPage() {
   const { showToast } = useToast();
@@ -82,47 +82,6 @@ export default function PazaryeriPage() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    
-    const dummyItems: any[] = [
-      {
-        id: 9991,
-        title: '200W Katlanabilir Güneş Paneli - Sıfır Ayarında',
-        description: 'Sadece 2 kamp döneminde kullanıldı. Monokristal hücreli, çok verimli. Karavanımı sattığım için satıyorum. Pazarlık payı vardır.',
-        price: 4500,
-        category: 'Enerji & Elektrik',
-        location_name: 'Muğla / Fethiye',
-        image_url: 'https://images.unsplash.com/photo-1509391366360-feaf9fa44452?q=80&w=800&auto=format&fit=crop',
-        profiles: { full_name: 'Ahmet Yılmaz' },
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 9992,
-        title: 'Webasto Dizel Isıtıcı 5kW - Garantili',
-        description: 'Geçen yıl alındı, bakımları yeni yapıldı. Dijital ekranlı ve uzaktan kumandalı. Kış kampları için vazgeçilmez.',
-        price: 8200,
-        category: 'Isıtma & Soğutma',
-        location_name: 'Bursa / Nilüfer',
-        image_url: 'https://images.unsplash.com/photo-1594541818212-9b9ba1f80b27?q=80&w=800&auto=format&fit=crop',
-        profiles: { full_name: 'Selin Aras' },
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 9993,
-        title: 'Helinox Tarzı Hafif Kamp Sandalye Seti (2 Adet)',
-        description: 'Çok az yer kaplar, ultra hafiftir. 120kg taşıma kapasiteli. Dağcılık ve karavan kullanımı için ideal.',
-        price: 2100,
-        category: 'Dış Donanım',
-        location_name: 'Antalya / Kaş',
-        image_url: 'https://images.unsplash.com/photo-1533626904905-cc52fd99285e?q=80&w=800&auto=format&fit=crop',
-        profiles: { full_name: 'Can Gezgin' },
-        created_at: new Date().toISOString()
-      }
-    ];
-
-    const filteredDummy = activeCategory === 'Tümü' 
-      ? dummyItems 
-      : dummyItems.filter(item => item.category === activeCategory);
-
     try {
       let query = supabase.from('marketplace_items').select(`*, profiles(full_name)`).order('created_at', { ascending: false });
       if (activeCategory !== 'Tümü') {
@@ -130,15 +89,17 @@ export default function PazaryeriPage() {
       }
 
       const { data, error } = await query;
-      
+
       if (error) {
-        setProducts(filteredDummy);
+        console.error("Marketplace fetch error:", error);
+        showToast("İlanlar yüklenemedi.", "error");
+        setProducts([]);
       } else {
-        setProducts([...(data || []), ...filteredDummy]);
+        setProducts(data || []);
       }
     } catch (err) {
-      console.error("Marketplace fetch error, using dummy data:", err);
-      setProducts(filteredDummy);
+      console.error("Marketplace fetch error:", err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }

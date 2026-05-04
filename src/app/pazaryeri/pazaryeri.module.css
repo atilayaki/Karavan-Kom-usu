@@ -1,7 +1,7 @@
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 32px 20px 24px;
 }
 
 .header {
@@ -57,8 +57,16 @@
 
 .content {
   display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 40px;
+  /* Mobile-first: stack sidebar above products as a horizontal scroll-pill row */
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 901px) {
+  .content {
+    grid-template-columns: 250px 1fr;
+    gap: 40px;
+  }
 }
 
 .filtersSidebar h3 {
@@ -72,24 +80,54 @@
 .categoryList {
   list-style: none;
   padding: 0;
+  /* Mobile-first: horizontal scroll pills */
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -12px 4px;
+  padding: 0 12px 4px;
 }
+.categoryList::-webkit-scrollbar { display: none; }
 
 .categoryList button {
-  width: 100%;
-  text-align: left;
-  padding: 12px 16px;
-  border: none;
-  background: transparent;
-  border-radius: var(--radius-md);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg, transparent);
+  border-radius: 99px;
   cursor: pointer;
   font-family: 'Outfit', sans-serif;
   font-weight: 600;
   transition: all 0.2s;
   color: inherit;
-  opacity: 0.6;
+  opacity: 0.7;
+  font-size: 0.82rem;
+  min-height: 36px;
+}
+
+@media (min-width: 901px) {
+  .categoryList {
+    flex-direction: column;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    gap: 8px;
+  }
+  .categoryList button {
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    font-size: 0.95rem;
+    opacity: 0.6;
+    white-space: normal;
+  }
 }
 
 .categoryList button:hover {
@@ -229,8 +267,10 @@
 
 .modalContent {
   width: 100%;
-  max-width: 600px;
+  max-width: min(600px, calc(100vw - 32px));
   padding: 40px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
 }
 
 .modalHeader {
@@ -289,37 +329,29 @@
   opacity: 0.5;
 }
 
+/* Mobile-first: place sidebar/filters above products on small screens */
+.filtersSidebar { order: -1; }
+@media (min-width: 901px) {
+  .filtersSidebar { order: 0; position: sticky; top: calc(var(--nav-height) + 24px); align-self: start; }
+}
+
+@media (max-width: 900px) {
+  .header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .header > * { width: 100%; }
+  .row { grid-template-columns: 1fr; gap: 12px; }
+  .productsGrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .modalContent { padding: 24px; }
+}
+
 @media (max-width: 480px) {
-  .container { padding: 80px 15px 30px; }
-  .headerContent h2 { font-size: 1.8rem; }
-  .productsGrid { 
-    grid-template-columns: 1fr; /* Dikeyde tek sütun yap ki kartlar ezilmesin */
-    gap: 15px; 
-  }
+  .container { padding: 20px 12px 24px; }
+  .headerContent h2 { font-size: 1.6rem; }
+  .productsGrid { grid-template-columns: 1fr; gap: 14px; }
   .productCard { border-radius: 16px; }
   .imageContainer { height: 180px; }
-  .cardBody { padding: 15px; }
-  .excerpt { display: none; } /* Kartı daha kompakt yapmak için kısa açıklamayı gizle */
-  
-  .categoryList {
-    gap: 5px;
-    padding-bottom: 5px;
-  }
-  .categoryList button {
-    padding: 8px 12px;
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 900px) and (min-width: 481px) {
-  .content { grid-template-columns: 1fr; }
-  .filtersSidebar { order: -1; }
-  .categoryList { flex-direction: row; overflow-x: auto; padding-bottom: 10px; }
-  .categoryList button { white-space: nowrap; width: auto; }
-}
-
-@media (max-width: 600px) and (min-width: 481px) {
-  .header { flex-direction: column; align-items: flex-start; }
-  .row { grid-template-columns: 1fr; }
-  .modalContent { padding: 24px; }
+  .cardBody { padding: 14px; }
+  .excerpt { display: none; }
+  .modalContent { padding: 18px; }
+  .modalHeader { margin-bottom: 14px; }
+  .bookmarkBtn { width: 40px; height: 40px; }
 }

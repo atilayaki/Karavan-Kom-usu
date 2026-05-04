@@ -63,7 +63,7 @@ export default function RootLayout({
           <Navbar />
           <SidebarNav />
           <VerifyEmailBanner />
-          <main style={{ marginTop: 'calc(var(--nav-height) + env(safe-area-inset-top))', paddingBottom: 'calc(90px + env(safe-area-inset-bottom))', position: 'relative', zIndex: 1 }}>
+          <main style={{ marginTop: 'calc(var(--nav-height) + env(safe-area-inset-top))', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))', position: 'relative', zIndex: 1 }}>
             {children}
           </main>
           <BottomNav />

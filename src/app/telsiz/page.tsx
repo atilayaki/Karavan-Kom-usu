@@ -38,22 +38,18 @@ export default function TelsizPage() {
     return `dm_${x}_${y}`;
   };
 
+  // Mobile: toggle which pane is visible (channels list vs chat)
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+
   // Initialize Auth & Data
   useEffect(() => {
     // Force scroll to top on navigation to avoid shifted layout
     window.scrollTo(0, 0);
-    
-    // Lock body scroll to make the app feel fixed
-    document.body.style.overflow = 'hidden';
-    
+
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
     fetchAllProfiles();
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
   }, []);
 
   const fetchAllProfiles = async () => {
@@ -313,7 +309,11 @@ export default function TelsizPage() {
   };
 
   return (
-    <div className={styles.container} ref={scrollRef}>
+    <div
+      className={styles.container}
+      ref={scrollRef}
+      data-mobile-view={mobileView}
+    >
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <IconRadio size={32} color="var(--forest-green)" />
@@ -323,10 +323,10 @@ export default function TelsizPage() {
         <div className={styles.channelList}>
           <h3>Frekanslar</h3>
           {channels.map((ch) => (
-            <button 
+            <button
               key={ch}
               className={`${styles.channelBtn} ${!isPrivate && activeChannel === ch ? styles.activeChannel : ''}`}
-              onClick={() => { setIsPrivate(false); setActiveChannel(ch); }}
+              onClick={() => { setIsPrivate(false); setActiveChannel(ch); setMobileView('chat'); }}
             >
               <span style={{opacity: 0.5}}>#</span> {ch}
             </button>
@@ -386,7 +386,7 @@ export default function TelsizPage() {
 
                   {isAccepted ? (
                     <div className={styles.friendActions}>
-                      <button title="Telsizde Mesajlaş" onClick={() => { setIsPrivate(true); setPrivateUser(u); }}>
+                      <button title="Telsizde Mesajlaş" onClick={() => { setIsPrivate(true); setPrivateUser(u); setMobileView('chat'); }}>
                         <IconChat size={16} />
                       </button>
                       <Link href={`/mesajlar/${u.id}`} title="Kalıcı DM" className={styles.dmLink}>💬</Link>
@@ -430,21 +430,29 @@ export default function TelsizPage() {
 
       <main className={styles.chatArea}>
         <div className={styles.chatHeader}>
+          <button
+            type="button"
+            className={styles.backBtn}
+            onClick={() => setMobileView('list')}
+            aria-label="Frekans listesine dön"
+          >
+            ←
+          </button>
           {isPrivate && privateUser ? (
-            <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-              <h3>🔒 {privateUser.full_name}</h3>
+            <div style={{display:'flex', alignItems:'center', gap:'15px', flex:1, minWidth: 0}}>
+              <h3 style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>🔒 {privateUser.full_name}</h3>
               <button className={styles.nudgeButton} onClick={handleNudge}>👉 Dürt</button>
             </div>
           ) : (
-            <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+            <div style={{display:'flex', alignItems:'center', gap:'10px', flex:1, minWidth: 0}}>
               <span className="pulse-dot"></span>
-              <h3># {activeChannel}</h3>
+              <h3 style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}># {activeChannel}</h3>
             </div>
           )}
-          
+
           {!isPrivate && (
             <button className={styles.sosButton} onClick={handleSOS}>
-              <IconSOS size={18} color="white" /> SOS Bildir
+              <IconSOS size={18} color="white" /> <span>SOS Bildir</span>
             </button>
           )}
         </div>
@@ -454,8 +462,6 @@ export default function TelsizPage() {
           
           {messages
             .filter(msg => {
-              const text = msg.text.toLowerCase();
-              if (text === 'aaa' || text === 'aaaaaaaaa') return false;
               const now = Date.now();
               const thirtyMins = 30 * 60 * 1000;
               return Math.abs(now - new Date(msg.created_at).getTime()) < thirtyMins;
@@ -516,7 +522,7 @@ export default function TelsizPage() {
         
         <div className={styles.diagnostic}>
           <span className="pulse-dot" style={{width: '6px', height: '6px'}}></span>
-          STRICT EPHEMERAL v2.3 • ONLINE: {onlineUsers.length}
+          {onlineUsers.length} kişi çevrimiçi · 30 dk sonra silinir
         </div>
       </main>
     </div>

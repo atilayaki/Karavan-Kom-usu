@@ -106,7 +106,7 @@ export default function ManzaraPage() {
         let query = supabase.from('posts').select(`
           *,
           profiles(full_name),
-          comments(id, comment, created_at, profiles(full_name))
+          comments(id, comment, created_at, user_id, profiles(full_name))
         `);
         if (filter === 'Popüler') {
           query = query.order('likes_count', { ascending: false });

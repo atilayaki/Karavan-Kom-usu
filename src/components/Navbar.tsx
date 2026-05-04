@@ -71,12 +71,16 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+      setUser(user ? { id: user.id } : null);
     });
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
+      setUser(session?.user ? { id: session.user.id } : null);
+    });
+    return () => { sub.subscription.unsubscribe(); };
   }, []);
 
   const drawer = (
@@ -136,10 +140,10 @@ export default function Navbar() {
           <div className={styles.menuWrapper} ref={wrapperRef}>
             <button
               className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ''}`}
-              onTouchStart={(e) => { e.preventDefault(); setOpen(v => !v); }}
               onClick={() => setOpen(v => !v)}
               aria-label="Menüyü aç"
               aria-expanded={open}
+              type="button"
             >
               <span></span><span></span><span></span>
             </button>

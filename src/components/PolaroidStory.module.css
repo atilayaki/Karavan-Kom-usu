@@ -6,8 +6,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: max(60px, calc(env(safe-area-inset-top) + 20px)) 20px max(60px, calc(env(safe-area-inset-bottom) + 20px));
   animation: fadeIn 0.3s ease;
+}
+
+@media (max-width: 480px) {
+  .overlay { padding: 56px 12px max(40px, calc(env(safe-area-inset-bottom) + 16px)); }
 }
 
 @keyframes fadeIn {

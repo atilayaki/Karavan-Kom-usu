@@ -1,9 +1,10 @@
-/* Floating action button */
+/* Floating action button — stacks above the AmbientSound FAB */
 .fab {
   position: fixed;
-  bottom: 88px; /* leave room for BottomNav */
+  /* BottomNav (88 mobile / 0 desktop) + safe-area + 80px (height of ambient FAB tower) */
+  bottom: calc(var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px) + 80px);
   right: 18px;
-  z-index: 900;
+  z-index: 1101;
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -19,6 +20,18 @@
   cursor: pointer;
   animation: kkSlideIn 0.45s ease-out;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  max-width: calc(100vw - 36px);
+}
+
+@media (max-width: 480px) {
+  .fab {
+    /* On tiny phones, collapse the label to keep the FAB compact */
+    padding: 12px;
+    gap: 6px;
+  }
+  .fab span:not(.fabClose) {
+    display: none;
+  }
 }
 
 .fab:hover {

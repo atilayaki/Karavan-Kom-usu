@@ -27,6 +27,7 @@
   --shadow: 0 8px 32px 0 rgba(45, 90, 39, 0.08);
   --shadow-lg: 0 20px 60px rgba(45, 90, 39, 0.15);
   --nav-height: 70px;
+  --bottom-nav-height: 0px;
 
   /* Transitions */
   --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -361,6 +362,13 @@ input, textarea, select {
   font-size: 0.95rem;
 }
 
+/* iOS Safari auto-zooms on focus when font-size < 16px. Force 16px on all touch viewports. */
+@media (max-width: 1023px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--sunset-orange) !important;
@@ -423,13 +431,20 @@ input::placeholder, textarea::placeholder {
 /* ─── Toast Notifications ─── */
 .toast-container {
   position: fixed;
-  top: calc(var(--nav-height) + 16px);
-  right: 16px;
+  top: calc(var(--nav-height) + env(safe-area-inset-top) + 16px);
+  right: max(16px, env(safe-area-inset-right));
+  left: max(16px, env(safe-area-inset-left));
   z-index: 10000;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 10px;
   pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .toast-container { left: 12px; right: 12px; align-items: stretch; }
+  .toast { max-width: 100% !important; }
 }
 
 .toast {
@@ -447,7 +462,7 @@ input::placeholder, textarea::placeholder {
   gap: 10px;
   pointer-events: all;
   animation: toastIn 0.4s var(--ease-bounce) forwards;
-  max-width: 380px;
+  max-width: min(380px, calc(100vw - 32px));
   color: white;
 }
 
@@ -536,9 +551,8 @@ input::placeholder, textarea::placeholder {
 
 /* ─── Responsive Helpers ─── */
 @media (max-width: 768px) {
-  :root { --nav-height: 60px; }
-  h1 { font-size: 1.8rem !important; }
-  h2 { font-size: 1.4rem !important; }
+  h1:not([class]) { font-size: 1.8rem; }
+  h2:not([class]) { font-size: 1.4rem; }
 }
 
 /* ─── Time-of-Day Atmosphere ─── */
@@ -581,47 +595,44 @@ html[data-tod="night"] {
   --forest-green-glow: rgba(135, 206, 235, 0.18);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   :root {
     --nav-height: 64px;
     --bottom-nav-height: 88px;
   }
-  
+}
+
+@media (max-width: 480px) {
   body {
     font-size: 14px;
     overflow-x: hidden;
     width: 100vw;
-    /* Alttan BottomNav + FAB payı bırak */
-    padding-bottom: calc(var(--bottom-nav-height) + 20px) !important;
   }
 
-  /* Global Konteyner Fix (Daha esnek hale getirildi) */
-  main, .container, .page-wrapper {
-    padding-left: 12px;
-    padding-right: 12px;
-    box-sizing: border-box;
-  }
-
-  /* SOS Butonu Navbar Çakışması (TopNav.tsx içindeki sınıfı hedef alıyoruz) */
+  /* SOS Butonu Navbar Çakışması */
   .sos-nav-btn span {
-    display: none !important; /* Mobilde metni gizle, sadece ikon kalsın */
-  }
-  
-  /* FAB Butonları (Dikey Kule Sistemi - Üst Üste Binmeyi Engeller) */
-  .ambient-control {
-    bottom: 110px !important; /* BottomNav'ın (88px) tam üzerinde */
-    right: 16px !important;
-    z-index: 2000;
-  }
-  
-  .pwa-install-btn {
-    bottom: 175px !important; /* Ambiyans butonunun üzerinde */
-    right: 16px !important;
-    z-index: 2000;
+    display: none !important;
   }
 
-  /* Tipografi */
-  h1 { font-size: 1.6rem !important; }
+  /* Tipografi — class'lı header'lar (sayfa başlıkları) etkilenmesin */
+  h1:not([class]) { font-size: 1.6rem; }
+  h2:not([class]) { font-size: 1.3rem; }
+}
+
+/* ─── Mobile-friendly modal helper ───
+   Apply alongside any modal content that should never overflow on phones.
+*/
+.modal-mobile-safe {
+  max-height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-bottom) - 32px) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Universal mobile tap-target floor */
+@media (max-width: 480px) {
+  button, a[role="button"], .btn-primary, .btn-secondary, .btn-ghost {
+    min-height: 44px;
+  }
 }
 
 /* Scrollbarları mobilde gizle (Modern App Hissi) */

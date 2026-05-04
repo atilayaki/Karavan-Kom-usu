@@ -24,15 +24,26 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 10px;
+  padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--glass-bg, rgba(127,127,127,0.05));
+  border: 1px solid var(--glass-border);
   transition: all 0.3s ease;
 }
 
 .activityItem:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 140, 66, 0.06);
+  border-color: rgba(255, 140, 66, 0.25);
   transform: translateX(5px);
+}
+
+@media (max-width: 480px) {
+  .feedContainer { padding: 16px 12px; margin-top: 20px; }
+  .feedContainer h3 { font-size: 1rem; margin-bottom: 12px; }
+  .feedList { gap: 10px; }
+  .activityItem { padding: 8px 10px; gap: 10px; }
+  .icon { padding: 8px; font-size: 1rem; }
+  .details p { font-size: 0.88rem; }
 }
 
 .icon {

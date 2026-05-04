@@ -259,3 +259,20 @@
   .summaryRow { grid-template-columns: 1fr 1fr; }
   .formGrid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 480px) {
+  .page { padding: 16px 12px 24px; }
+  .pageHeader { gap: 12px; }
+  .title { font-size: 1.4rem; }
+  .summaryRow { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .summaryCard { padding: 12px; }
+  .summaryVal { font-size: 1.3rem; }
+  .form { padding: 18px 16px; }
+  .formActions { flex-direction: column; }
+  .formActions > * { width: 100%; min-height: 44px; }
+  .catFilter { gap: 6px; }
+  .catBtn { padding: 6px 10px; font-size: 0.74rem; }
+  .logCard { padding: 12px 14px; }
+  .logTop { gap: 10px; }
+  .formField input, .formField select, .formField textarea { font-size: 16px; }
+}

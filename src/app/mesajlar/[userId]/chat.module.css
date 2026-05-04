@@ -4,14 +4,22 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - 70px - 70px);
+  height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
 
 @media (max-width: 768px) {
   .page {
     padding: 0;
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
   }
+
+  .header { padding: 10px 12px; gap: 10px; border-radius: 0; }
+  .headerName { font-size: 0.9rem; }
+  .profileLink { font-size: 0.7rem; }
+  .chatArea { padding: 12px 6px; }
+  .inputBar { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); border-radius: 0; }
+  .input { font-size: 16px; /* prevents iOS zoom-on-focus */ padding: 10px 12px; }
 }
 
 /* ── Header ── */

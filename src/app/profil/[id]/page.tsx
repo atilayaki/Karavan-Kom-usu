@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './profil.module.css';
 import Link from 'next/link';
-import { IconUser, IconMap, IconSOS, IconHeart } from '@/components/Icons';
-import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { IconMap, IconSOS } from '@/components/Icons';
 import { useParams } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -21,7 +20,6 @@ export default function ProfilePage() {
   const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
   const [friendshipId, setFriendshipId] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -148,19 +146,14 @@ export default function ProfilePage() {
     }
   };
 
-  if (error) return (
-    <div style={{height:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--background)', color:'white', padding:'20px', textAlign:'center'}}>
-      <IconSOS size={48} color="var(--sunset-orange)" />
-      <h2 style={{marginTop:'20px'}}>Bir hata oluştu</h2>
-      <p style={{opacity:0.7, margin:'10px 0 20px'}}>{error}</p>
-      <Link href="/telsiz" className="btn-secondary">Geri Dön</Link>
+  if (loading) return (
+    <div style={{minHeight:'60vh', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--foreground)'}}>
+      Yükleniyor...
     </div>
   );
 
-  if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--background)', color:'white'}}>Yükleniyor...</div>;
-  
   if (!profile) return (
-    <div style={{height:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--background)', color:'white', gap:'20px'}}>
+    <div style={{minHeight:'60vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', color:'var(--foreground)', gap:'20px', padding:'20px', textAlign:'center'}}>
       <IconSOS size={48} color="var(--sunset-orange)" />
       <h2>Komşu bulunamadı</h2>
       <Link href="/telsiz" className="btn-secondary">Geri Dön</Link>
@@ -190,7 +183,7 @@ export default function ProfilePage() {
           <div className={styles.nameWrap}>
             <h1>{profile.full_name}</h1>
             <div className={styles.badges}>
-              <span className={styles.levelBadge}>LVL 12</span>
+              <span className={styles.levelBadge}>LVL {profile.level ?? Math.max(1, Math.floor((profile.xp ?? 0) / 100) + 1)}</span>
               <span className={styles.typeBadge}>{profile.caravan_type || 'Gezgin'}</span>
               {profile.is_private && <span className={styles.privateBadge}>🔒 Gizli</span>}
             </div>

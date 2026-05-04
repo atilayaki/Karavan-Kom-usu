@@ -106,7 +106,10 @@ export default function MesajlarPage() {
     <div className={styles.container}>
       <div className={styles.glow} />
       
-      <div className={styles.dmWrapper + " glass-card"}>
+      <div
+        className={styles.dmWrapper + " glass-card"}
+        data-mobile-view={activeChat ? 'chat' : 'list'}
+      >
         {/* Sidebar */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
@@ -146,6 +149,14 @@ export default function MesajlarPage() {
           {activeChat ? (
             <>
               <header className={styles.chatHeader}>
+                <button
+                  type="button"
+                  className={styles.backBtn}
+                  onClick={() => setActiveChat(null)}
+                  aria-label="Mesaj listesine dön"
+                >
+                  ←
+                </button>
                 <div className={styles.activeUser}>
                   <div className={styles.smallAvatar}>
                     {activeChat.avatar_url ? (

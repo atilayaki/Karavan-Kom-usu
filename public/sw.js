@@ -1,44 +1,26 @@
-const CACHE_NAME = 'karavan-v2';
-
-const PRECACHE_URLS = [
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
-  );
+// Self-unregistering service worker.
+// Replaces any previously cached SW; once installed it deletes all caches,
+// unregisters itself, and reloads open clients so they fetch fresh assets.
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
+  event.waitUntil((async () => {
+    // Wipe every cache that any older SW created.
+    const keys = await caches.keys();
+    await Promise.all(keys.map((k) => caches.delete(k)));
+
+    // Unregister this SW so the page is fully un-managed next load.
+    await self.registration.unregister();
+
+    // Force every open tab to reload with fresh resources.
+    const clients = await self.clients.matchAll({ type: 'window' });
+    for (const client of clients) {
+      try { client.navigate(client.url); } catch {}
+    }
+  })());
 });
 
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Next.js chunk'ları, HMR, API ve harici servisler — hiç dokunma
-  if (
-    url.pathname.startsWith('/_next/') ||
-    url.pathname.startsWith('/api/') ||
-    url.hostname !== self.location.hostname
-  ) {
-    return;
-  }
-
-  // Sadece uygulama ikonları ve manifest — cache-first
-  if (PRECACHE_URLS.includes(url.pathname)) {
-    event.respondWith(
-      caches.match(request).then((cached) => cached || fetch(request))
-    );
-  }
-});
+// Pass everything through to the network — never serve from cache.
+self.addEventListener('fetch', () => {});

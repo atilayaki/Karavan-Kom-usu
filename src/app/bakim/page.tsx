@@ -60,7 +60,7 @@ export default function BakimPage() {
   async function save() {
     if (!userId || !form.title.trim()) return;
     setSaving(true);
-    await supabase.from('maintenance_logs').insert({
+    const { error } = await supabase.from('maintenance_logs').insert({
       user_id: userId,
       ...form,
       cost: form.cost || null,
@@ -68,6 +68,11 @@ export default function BakimPage() {
       notes: form.notes?.trim() || null,
       next_due_date: form.next_due_date || null,
     });
+    if (error) {
+      alert('Bakım kaydı eklenemedi: ' + error.message);
+      setSaving(false);
+      return;
+    }
     await fetchLogs(userId);
     setForm({ ...EMPTY });
     setShowForm(false);

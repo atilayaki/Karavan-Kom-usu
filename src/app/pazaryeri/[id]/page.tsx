@@ -178,7 +178,7 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
 
           <div className={styles.actions}>
             {!isOwner && (
-              <Link href={`/telsiz?dm=${item.user_id}`} className="btn-primary" style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>
+              <Link href={`/mesajlar/${item.user_id}`} className="btn-primary" style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>
                 <IconChat size={16} /> Satıcıyla İletişim
               </Link>
             )}
