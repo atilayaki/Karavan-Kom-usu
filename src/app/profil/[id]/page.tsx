@@ -220,7 +220,7 @@ export default function ProfilePage() {
           ) : (
             <div className={styles.feed}>
               <div className={styles.emptyFeed}>
-                <IconMap size={40} opacity={0.3} />
+                <IconMap size={40} />
                 <p>Henüz paylaşılmış bir fotoğraf veya yer yok.</p>
               </div>
             </div>
