@@ -176,9 +176,13 @@ export default function ProfilePage() {
       
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <div className={styles.avatarWrap} onClick={() => setIsZoomed(true)}>
+          <div className={styles.avatarWrap} onClick={() => profile.avatar_url && setIsZoomed(true)}>
             <div className={styles.avatar}>
-              {profile.full_name?.charAt(0)}
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.full_name} style={{width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%'}} />
+              ) : (
+                profile.full_name?.charAt(0)
+              )}
             </div>
             {isOnline && <div className={styles.onlineDot} />}
           </div>
@@ -268,7 +272,11 @@ export default function ProfilePage() {
       {isZoomed && (
         <div className={styles.zoomModal} onClick={() => setIsZoomed(false)}>
           <div className={styles.zoomedAvatar}>
-            {profile.full_name?.charAt(0)}
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.full_name} />
+            ) : (
+              profile.full_name?.charAt(0)
+            )}
           </div>
           <div className={styles.zoomClose}>Kapatmak için tıkla</div>
         </div>
