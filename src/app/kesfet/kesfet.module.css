@@ -139,13 +139,17 @@
   opacity: 1 !important;
 }
 
+/* Explicit height on mobile so Leaflet's height:100% canvas can resolve.
+   Without this, flex auto-basis leaves the parent indefinite and tiles
+   never paint (large black rectangle). Desktop reverts to flex fill. */
 .mapArea {
-  flex: 1 1 auto;
   position: relative;
   margin: 0 !important;
   padding: 0 !important;
   width: 100%;
-  min-height: 260px;
+  height: 50dvh;
+  min-height: 320px;
+  flex: 0 0 auto;
   order: 1;
 }
 
@@ -153,6 +157,7 @@
   .mapArea {
     height: 100%;
     min-height: 0;
+    flex: 1 1 auto;
     order: 0;
   }
 }
