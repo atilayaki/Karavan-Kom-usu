@@ -87,17 +87,17 @@ export default function ProfilePage() {
       };
 
       const fetchFriendship = async () => {
-        if (user && user.id !== profileId) {
+        if (currentUser && currentUser.id !== profileId) {
           const { data } = await supabase
             .from('friendships')
             .select('*')
-            .or(`and(user_id.eq.${user.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${user.id})`)
+            .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${currentUser.id})`)
             .maybeSingle();
 
           if (data) {
             setFriendshipId(data.id);
             if (data.status === 'accepted') setFriendshipStatus('accepted');
-            else if (data.user_id === user.id) setFriendshipStatus('pending_sent');
+            else if (data.user_id === currentUser.id) setFriendshipStatus('pending_sent');
             else setFriendshipStatus('pending_received');
           }
         }
