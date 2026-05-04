@@ -102,15 +102,34 @@ export default function GunlukPage() {
   const [postsCount, setPostsCount] = useState(0);
   const [xp, setXp] = useState(0);
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
+  const [friendsList, setFriendsList] = useState<any[]>([]);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
 
   useEffect(() => {
     if (session?.user?.id) {
       fetchProfile();
       fetchStats();
       fetchAchievements();
+      fetchFriendsList();
       handleCheckIn(session.user.id);
     }
   }, [session]);
+
+  const fetchFriendsList = async () => {
+    if (!session?.user?.id) return;
+    const uid = session.user.id;
+    
+    const { data, error } = await supabase
+      .from('friendships')
+      .select('*, sender:user_id(id, full_name, avatar_url, caravan_type), receiver:friend_id(id, full_name, avatar_url, caravan_type)')
+      .eq('status', 'accepted')
+      .or(`user_id.eq.${uid},friend_id.eq.${uid}`);
+
+    if (data) {
+      const friends = data.map(f => f.user_id === uid ? f.receiver : f.sender);
+      setFriendsList(friends);
+    }
+  };
 
   const fetchStats = async () => {
     if (!session?.user?.id) return;
@@ -311,7 +330,7 @@ export default function GunlukPage() {
               <strong>{routesCount}</strong>
               <span>Rota</span>
             </div>
-            <div className={styles.statBox}>
+            <div className={styles.statBox} onClick={() => setShowFriendsModal(true)} style={{cursor: 'pointer'}}>
               <IconUser size={24} color="var(--forest-green)" />
               <strong>{friendsCount}</strong>
               <span>Arkadaş</span>
@@ -405,6 +424,39 @@ export default function GunlukPage() {
             </div>
           </form>
         </div>
+
+        {showFriendsModal && (
+          <div className={styles.modalOverlay} onClick={() => setShowFriendsModal(false)}>
+            <div className={styles.friendsModal + " glass-card"} onClick={e => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Kampçı Arkadaşlarım</h3>
+                <button onClick={() => setShowFriendsModal(false)}>✕</button>
+              </div>
+              <div className={styles.modalBody}>
+                {friendsList.length === 0 ? (
+                  <p className={styles.emptyListText}>Henüz bir arkadaşın yok. Telsizden yeni komşular bulabilirsin! 🚐</p>
+                ) : (
+                  friendsList.map(friend => (
+                    <Link href={`/profil/${friend.id}`} key={friend.id} className={styles.friendRow}>
+                      <div className={styles.friendAvatar}>
+                        {friend.avatar_url ? (
+                          <Image src={friend.avatar_url} fill alt={friend.full_name} style={{objectFit: 'cover', borderRadius: '50%'}} />
+                        ) : (
+                          friend.full_name?.charAt(0) || 'K'
+                        )}
+                      </div>
+                      <div className={styles.friendInfo}>
+                        <span className={styles.friendName}>{friend.full_name}</span>
+                        <span className={styles.friendType}>{friend.caravan_type || 'Gezgin'}</span>
+                      </div>
+                      <div className={styles.viewProfile}>Gör →</div>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {showQRCard && profile && session?.user && (
           <KaravanQRCard
