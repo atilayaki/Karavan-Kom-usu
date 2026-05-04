@@ -1,24 +1,53 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
 
+// Mobile / flex-layout fix: when the map mounts inside a flex item that
+// resolves its height after first paint (or after the keyboard closes,
+// orientation changes, etc.) Leaflet computes a 0×0 canvas and never paints
+// tiles. Listen for size changes on the container and re-validate.
+function MapResizeFix() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+
+    // Sequential invalidation covers: SSR-to-CSR hydration, flex settle,
+    // tab activation, and font/CSS load shifts.
+    const timers = [0, 100, 300, 700, 1500].map((d) =>
+      setTimeout(() => map.invalidateSize(), d)
+    );
+
+    // ResizeObserver covers everything the timers miss (orientation, parent
+    // grow/shrink, dynamic toolbar on iOS).
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => map.invalidateSize());
+      ro.observe(container);
+    }
+
+    const onWinResize = () => map.invalidateSize();
+    window.addEventListener('resize', onWinResize);
+    window.addEventListener('orientationchange', onWinResize);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      ro?.disconnect();
+      window.removeEventListener('resize', onWinResize);
+      window.removeEventListener('orientationchange', onWinResize);
+    };
+  }, [map]);
+  return null;
+}
+
 function MapEvents({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
-  const map = useMapEvents({
+  useMapEvents({
     click(e) {
       if (onMapClick) onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
-
-  useEffect(() => {
-    // Force map to recalculate its container size
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-  }, [map]);
-
   return null;
 }
 
@@ -99,6 +128,7 @@ export default function Map({
         </LayersControl.BaseLayer>
       </LayersControl>
 
+      <MapResizeFix />
       <MapEvents onMapClick={onMapClick} />
 
       {userLocation && isValidLatLng(userLocation.lat, userLocation.lng) && (

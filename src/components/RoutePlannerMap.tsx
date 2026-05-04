@@ -10,18 +10,39 @@ const SHADOW = 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png';
 
 function MapController({ positions }: { positions: [number, number][] }) {
   const map = useMap();
-  
+
   useEffect(() => {
     if (positions.length >= 2) {
       map.fitBounds(positions as L.LatLngBoundsExpression, { padding: [40, 40] });
     }
   }, [positions, map]);
 
+  // Robust invalidate: chained timers + ResizeObserver + window events.
+  // Without this, flex/grid parents that finalize height after first paint
+  // leave Leaflet with a 0×0 canvas and tiles never render on mobile.
   useEffect(() => {
-    // Force recalculate size after render
-    setTimeout(() => {
-      map.invalidateSize();
-    }, 200);
+    const container = map.getContainer();
+
+    const timers = [0, 100, 300, 700, 1500].map((d) =>
+      setTimeout(() => map.invalidateSize(), d)
+    );
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => map.invalidateSize());
+      ro.observe(container);
+    }
+
+    const onWinResize = () => map.invalidateSize();
+    window.addEventListener('resize', onWinResize);
+    window.addEventListener('orientationchange', onWinResize);
+
+    return () => {
+      timers.forEach(clearTimeout);
+      ro?.disconnect();
+      window.removeEventListener('resize', onWinResize);
+      window.removeEventListener('orientationchange', onWinResize);
+    };
   }, [map]);
 
   return null;
