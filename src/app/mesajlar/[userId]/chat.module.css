@@ -4,7 +4,14 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
+  height: calc(100dvh - 70px - 70px);
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 0;
+    width: 100vw;
+  }
 }
 
 /* ── Header ── */

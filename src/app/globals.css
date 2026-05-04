@@ -580,3 +580,17 @@ html[data-tod="sunset"] {
 html[data-tod="night"] {
   --forest-green-glow: rgba(135, 206, 235, 0.18);
 }
+
+ / *   F l o a t i n g   A c t i o n   B u t t o n s   M o b i l e   F i x   * / 
+ @ m e d i a   ( m a x - w i d t h :   7 6 8 p x )   { 
+     . a m b i e n t - c o n t r o l   { 
+         b o t t o m :   9 0 p x   ! i m p o r t a n t ; 
+         r i g h t :   2 0 p x   ! i m p o r t a n t ; 
+     } 
+     
+     . p w a - i n s t a l l - b t n   { 
+         b o t t o m :   1 6 0 p x   ! i m p o r t a n t ; 
+         r i g h t :   2 0 p x   ! i m p o r t a n t ; 
+     } 
+ }  
+ 

@@ -247,9 +247,28 @@
 }
 
 @media (max-width: 768px) {
-  .container { padding: 0; height: calc(100vh - 60px); }
-  .dmWrapper { grid-template-columns: 1fr; border-radius: 0; }
-  .sidebar { display: none; } /* Mobil için ileride tab yapısı eklenebilir */
-  .activeChat .sidebar { display: none; }
-  .activeChat .chatArea { display: flex; }
+  .container { 
+    padding: 0; 
+    height: calc(100dvh - 70px - 70px); /* TopNav ve BottomNav payı */
+    width: 100vw;
+  }
+  .dmWrapper { 
+    grid-template-columns: 1fr; 
+    border-radius: 0; 
+    height: 100%;
+  }
+  
+  /* Eğer aktif sohbet yoksa sidebar'ı göster, varsa gizle */
+  .sidebar { 
+    display: flex; 
+    width: 100%;
+  }
+  
+  /* Sohbet penceresi açıksa sidebar'ı gizleyen yapı için layout.tsx veya page.tsx desteği gerekebilir 
+     ama şimdilik en azından bir tarafın görünmesini sağlıyoruz */
+  .chatArea {
+    display: none;
+  }
+
+  /* ChatPage /mesajlar/[userId] için chatArea'yı görünür yap */
 }
