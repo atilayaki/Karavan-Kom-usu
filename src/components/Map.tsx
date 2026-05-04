@@ -1,6 +1,6 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
@@ -53,81 +53,104 @@ export default function Map({
     });
   }, []);
 
-  const isDarkMode = typeof document !== 'undefined' && document.body.classList.contains('dark-mode');
-
-  const tileUrl = isDarkMode 
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-
-  const validSpots = spots.filter(s => isValidLatLng(s?.lat, s?.lng));
-  const validNotes = notes.filter(n => isValidLatLng(n?.lat, n?.lng));
-
   const center: [number, number] = userLocation && isValidLatLng(userLocation.lat, userLocation.lng)
     ? [userLocation.lat, userLocation.lng]
     : [38.9637, 35.2433];
 
   return (
-    <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 1 }}>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        url={tileUrl}
-      />
+    <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 1 }} zoomControl={false}>
+      <L.Control.Zoom position="bottomright" />
+      
+      <LayersControl position="topright">
+        <LayersControl.BaseLayer checked name="Modern Sokak">
+          <TileLayer
+            attribution='&copy; JawgMaps'
+            url="https://{s}.tile.jawg.io/jawg-streets/{z}/{x}/{y}{r}.png?access-token=guest"
+          />
+        </LayersControl.BaseLayer>
+        
+        <LayersControl.BaseLayer name="Premium Uydu">
+          <TileLayer
+            attribution='&copy; Esri'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          />
+        </LayersControl.BaseLayer>
+
+        <LayersControl.BaseLayer name="Arazi (Topo)">
+          <TileLayer
+            attribution='&copy; OpenTopoMap'
+            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+          />
+        </LayersControl.BaseLayer>
+        
+        <LayersControl.BaseLayer name="Gece Modu">
+          <TileLayer
+            attribution='&copy; CartoDB'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
+        </LayersControl.BaseLayer>
+      </LayersControl>
+
       <MapEvents onMapClick={onMapClick} />
 
       {userLocation && isValidLatLng(userLocation.lat, userLocation.lng) && (
         <Marker position={[userLocation.lat, userLocation.lng]} icon={icons.blue}>
-          <Popup><strong>Sen Buradasın</strong></Popup>
+          <Popup className="premium-popup">
+            <div style={{textAlign:'center', padding:'5px'}}>
+              <strong>Sen Buradasın</strong><br/>
+              <span style={{fontSize:'0.8rem', opacity:0.7}}>Mevcut Konumun</span>
+            </div>
+          </Popup>
         </Marker>
       )}
 
-      {draftRoute?.start && (
-        <Marker position={draftRoute.start} icon={icons.blue}>
-          <Popup>Başlangıç Noktası (bitiş için haritaya dokun)</Popup>
-        </Marker>
-      )}
-      {draftRoute?.end && (
-        <Marker position={draftRoute.end} icon={icons.blue}>
-          <Popup>Bitiş Noktası</Popup>
-        </Marker>
-      )}
-      {draftRoute?.start && draftRoute?.end && (
-        <Polyline positions={[draftRoute.start, draftRoute.end]} pathOptions={{ color: '#00C853', weight: 4, dashArray: '10, 10' }} />
-      )}
-
-      {validSpots.map((spot) => (
+      {/* Spots, Notes and Routes markers logic remains similar but with improved Popups */}
+      {spots.filter(s => isValidLatLng(s?.lat, s?.lng)).map((spot) => (
         <Marker
           key={`spot-${spot.id}`}
           position={[spot.lat, spot.lng]}
           icon={spot.category === 'Sakin Köşe' ? icons.green : icons.red}
         >
-          <Popup>
-            <div style={{ minWidth: '180px' }}>
-              <strong style={{fontSize: '1rem'}}>{spot.title}</strong><br />
-              <span style={{ fontWeight: 700, color: spot.category === 'Sakin Köşe' ? '#2d5a27' : '#ff8c42' }}>{spot.category}</span>
+          <Popup className="premium-popup">
+            <div style={{ minWidth: '200px', padding:'5px' }}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px'}}>
+                <strong style={{fontSize: '1.1rem', color:'var(--text)'}}>{spot.title}</strong>
+                <span style={{ 
+                  fontSize:'0.7rem', 
+                  padding:'2px 8px', 
+                  borderRadius:'10px',
+                  background: spot.category === 'Sakin Köşe' ? 'rgba(45,90,39,0.1)' : 'rgba(255,140,66,0.1)',
+                  color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)',
+                  fontWeight: 700
+                }}>{spot.category}</span>
+              </div>
               
+              {spot.image_url && <img src={spot.image_url} style={{width:'100%', height:'100px', objectFit:'cover', borderRadius:'8px', marginBottom:'8px'}} />}
+
               {spot.attributes && (
-                <div style={{ display: 'flex', gap: '5px', marginTop: '8px', flexWrap: 'wrap' }}>
-                  {spot.attributes.water && <span title="Su Var" style={{opacity: 1}}>💧</span>}
-                  {spot.attributes.electricity && <span title="Elektrik Var" style={{opacity: 1}}>⚡</span>}
-                  {spot.attributes.wc && <span title="WC Var" style={{opacity: 1}}>🚽</span>}
-                  {spot.attributes.pet_friendly && <span title="Evcil Hayvan Dostu" style={{opacity: 1}}>🐾</span>}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                  {spot.attributes.water && <span title="Su">💧</span>}
+                  {spot.attributes.electricity && <span title="Elektrik">⚡</span>}
+                  {spot.attributes.wc && <span title="WC">🚽</span>}
                 </div>
               )}
 
-              {spot.address && <div style={{ fontSize: '0.8rem', marginTop: '8px', opacity: 0.8, borderTop: '1px solid #eee', paddingTop: '5px' }}>📍 {spot.address}</div>}
+              {spot.address && <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>📍 {spot.address}</div>}
             </div>
           </Popup>
         </Marker>
       ))}
 
-      {validNotes.map((note) => (
+      {notes.filter(n => isValidLatLng(n?.lat, n?.lng)).map((note) => (
         <Marker key={`note-${note.id}`} position={[note.lat, note.lng]} icon={icons.orange}>
-          <Popup>
-            <strong>📌 Askıda Not</strong><br />
-            {note.note}<br />
-            <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
-              Bırakan: {note.profiles?.full_name || 'Gizli Karavancı'}
-            </span>
+          <Popup className="premium-popup">
+            <div style={{padding:'5px'}}>
+              <strong style={{color:'var(--sunset-orange)'}}>📌 Askıda Not</strong><br />
+              <p style={{margin:'8px 0', fontSize:'0.9rem', fontStyle:'italic'}}>"{note.note}"</p>
+              <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
+                — {note.profiles?.full_name || 'Gizli Karavancı'}
+              </span>
+            </div>
           </Popup>
         </Marker>
       ))}
@@ -144,16 +167,27 @@ export default function Map({
           <Polyline
             key={`route-${route.id}`}
             positions={positions}
-            pathOptions={{ color: '#FF8C42', weight: 4, opacity: 0.8 }}
+            pathOptions={{ color: 'var(--sunset-orange)', weight: 5, opacity: 0.7, lineCap: 'round' }}
           >
-            <Popup>
-              <strong>🛣️ {route.title}</strong><br />
-              {route.start_location_name} ➔ {route.end_location_name}<br />
-              {route.description && <p style={{ fontSize: '0.85rem', opacity: 0.9, marginTop: '5px' }}>{route.description}</p>}
+            <Popup className="premium-popup">
+              <div style={{padding:'5px'}}>
+                <strong style={{fontSize:'1rem'}}>🛣️ {route.title}</strong><br />
+                <div style={{margin:'5px 0', fontSize:'0.85rem'}}>
+                  <span style={{opacity:0.6}}>Başlangıç:</span> {route.start_location_name}<br/>
+                  <span style={{opacity:0.6}}>Varış:</span> {route.end_location_name}
+                </div>
+                {route.description && <p style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '8px', borderTop:'1px solid rgba(0,0,0,0.05)', paddingTop:'5px' }}>{route.description}</p>}
+              </div>
             </Popup>
           </Polyline>
         );
       })}
+
+      {draftRoute?.start && <Marker position={draftRoute.start} icon={icons.blue} />}
+      {draftRoute?.end && <Marker position={draftRoute.end} icon={icons.blue} />}
+      {draftRoute?.start && draftRoute?.end && (
+        <Polyline positions={[draftRoute.start, draftRoute.end]} pathOptions={{ color: 'var(--forest-green)', weight: 4, dashArray: '10, 10' }} />
+      )}
     </MapContainer>
   );
 }
