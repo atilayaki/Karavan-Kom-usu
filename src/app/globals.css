@@ -581,16 +581,59 @@ html[data-tod="night"] {
   --forest-green-glow: rgba(135, 206, 235, 0.18);
 }
 
- / *   F l o a t i n g   A c t i o n   B u t t o n s   M o b i l e   F i x   * / 
- @ m e d i a   ( m a x - w i d t h :   7 6 8 p x )   { 
-     . a m b i e n t - c o n t r o l   { 
-         b o t t o m :   9 0 p x   ! i m p o r t a n t ; 
-         r i g h t :   2 0 p x   ! i m p o r t a n t ; 
-     } 
-     
-     . p w a - i n s t a l l - b t n   { 
-         b o t t o m :   1 6 0 p x   ! i m p o r t a n t ; 
-         r i g h t :   2 0 p x   ! i m p o r t a n t ; 
-     } 
- }  
- 
+/* --- Global Mobile Portrait Optimizations (A-Z Fix) --- */
+@media (max-width: 480px) {
+  :root {
+    --nav-height: 65px;
+    --bottom-nav-height: 75px;
+  }
+  
+  body {
+    font-size: 14px;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden; /* Taşmaları engelle */
+    width: 100vw;
+  }
+
+  /* Global Konteyner Fix: Sıkışıklığı engelle, nefes aldır */
+  main, .container, .page-wrapper, .main-content {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Floating Action Buttons (FAB) Çakışma Önleyici */
+  .ambient-control {
+    bottom: 90px !important;
+    right: 15px !important;
+    z-index: 999;
+    transform: scale(0.85);
+  }
+  
+  .pwa-install-btn {
+    bottom: 155px !important;
+    right: 15px !important;
+    z-index: 999;
+    transform: scale(0.85);
+  }
+
+  /* Tipografi Fix: Metinlerin birbirine girmesini engelle */
+  h1 { font-size: 1.7rem !important; line-height: 1.2; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.4rem !important; margin-bottom: 0.4rem; }
+  p { line-height: 1.5; }
+
+  /* Kart yapılarını mobilde dikey yap */
+  .glass-card, .card {
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* Scrollbarları mobilde gizle (Modern App Hissi) */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { display: none; }
+  * { -ms-overflow-style: none; scrollbar-width: none; }
+}

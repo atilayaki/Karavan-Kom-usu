@@ -282,7 +282,26 @@
   margin-top: 10px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 480px) {
+  .container { padding: 40px 15px 80px; }
+  .title { font-size: 1.8rem; }
+  .header { margin-bottom: 20px; }
+  .postCard { 
+    padding: 12px; 
+    border-radius: 16px;
+    margin-bottom: 10px;
+  }
+  .imageContainer { 
+    width: calc(100% + 24px); 
+    margin-left: -12px; 
+    margin-right: -12px; 
+    max-height: 400px;
+  }
+  .postText { font-size: 0.9rem; line-height: 1.4; }
+  .actionBtn { font-size: 0.8rem; }
+}
+
+@media (max-width: 640px) and (min-width: 481px) {
   .header { flex-direction: column; align-items: flex-start; gap: 15px; }
   .postCard { padding: 16px; }
   .imageContainer { width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; }

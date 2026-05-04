@@ -289,14 +289,36 @@
   opacity: 0.5;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 480px) {
+  .container { padding: 80px 15px 30px; }
+  .headerContent h2 { font-size: 1.8rem; }
+  .productsGrid { 
+    grid-template-columns: 1fr; /* Dikeyde tek sütun yap ki kartlar ezilmesin */
+    gap: 15px; 
+  }
+  .productCard { border-radius: 16px; }
+  .imageContainer { height: 180px; }
+  .cardBody { padding: 15px; }
+  .excerpt { display: none; } /* Kartı daha kompakt yapmak için kısa açıklamayı gizle */
+  
+  .categoryList {
+    gap: 5px;
+    padding-bottom: 5px;
+  }
+  .categoryList button {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 481px) {
   .content { grid-template-columns: 1fr; }
   .filtersSidebar { order: -1; }
   .categoryList { flex-direction: row; overflow-x: auto; padding-bottom: 10px; }
   .categoryList button { white-space: nowrap; width: auto; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px) and (min-width: 481px) {
   .header { flex-direction: column; align-items: flex-start; }
   .row { grid-template-columns: 1fr; }
   .modalContent { padding: 24px; }

@@ -417,7 +417,58 @@
   letter-spacing: 1px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
+  .container {
+    flex-direction: column;
+    height: calc(100dvh - 140px);
+  }
+
+  .sidebar { 
+    width: 100%; 
+    height: 140px; /* Kanalları yatay bir bar gibi yapabiliriz veya küçük bir alan */
+    border-right: none;
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .sidebarHeader { padding: 12px 15px; }
+  .sidebarHeader h2 { font-size: 1.1rem; display: block; }
+  
+  .channelList {
+    display: flex;
+    padding: 5px 15px;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: auto;
+  }
+  
+  .channelList h3 { display: none; }
+  .channelBtn { 
+    width: auto; 
+    white-space: nowrap; 
+    padding: 6px 12px; 
+    font-size: 0.8rem;
+  }
+
+  .friendsList { display: none; } /* Mobilde dikeyde çok kalabalık, ileride drawer yapılabilir */
+
+  .chatArea { height: calc(100% - 140px); }
+  .chatHeader { padding: 12px 15px; }
+  .chatHeader h3 { font-size: 1rem; }
+  
+  .messagesContainer { 
+    padding: 15px; 
+    gap: 12px;
+  }
+  
+  .messageWrapper { max-width: 90%; }
+  .messageBubble { padding: 10px 14px; font-size: 0.9rem; }
+  
+  .inputArea { padding: 12px 15px; }
+  .diagnostic { display: none; }
+}
+
+@media (max-width: 768px) and (min-width: 481px) {
   .sidebar { width: 80px; }
   .sidebarHeader h2, .channelBtn, .friendDetails, .addFriendBtn, .channelList h3 { display: none; }
   .sidebarHeader { padding: 20px; justify-content: center; }
