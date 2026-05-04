@@ -8,6 +8,7 @@ import styles from './Navbar.module.css';
 import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
+import { supabase } from '@/lib/supabase';
 
 const NAV_CATEGORIES = [
   {
@@ -70,6 +71,14 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+  }, []);
+
   const drawer = (
     <div className={styles.drawerOverlay} onClick={() => setOpen(false)}>
       <div className={styles.drawer} onClick={e => e.stopPropagation()}>
@@ -101,9 +110,17 @@ export default function Navbar() {
           ))}
         </div>
 
+        {user && (
+          <Link href={`/profil/${user.id}`} className={styles.drawerProfile} style={{marginBottom: 0}} onClick={() => setOpen(false)}>
+            <span>👀</span>
+            <span>Genel Profilimi Gör</span>
+            <span className={styles.drawerArrow}>→</span>
+          </Link>
+        )}
+
         <Link href="/gunluk" className={styles.drawerProfile} onClick={() => setOpen(false)}>
-          <span>👤</span>
-          <span>Günlüğüm & Profil</span>
+          <span>⚙️</span>
+          <span>Günlüğüm & Ayarlar</span>
           <span className={styles.drawerArrow}>→</span>
         </Link>
       </div>
