@@ -43,10 +43,17 @@ export default function TelsizPage() {
     // Force scroll to top on navigation to avoid shifted layout
     window.scrollTo(0, 0);
     
+    // Lock body scroll to make the app feel fixed
+    document.body.style.overflow = 'hidden';
+    
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
     fetchAllProfiles();
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
   }, []);
 
   const fetchAllProfiles = async () => {
