@@ -475,13 +475,13 @@ export default function GunlukPage() {
       <div className={styles.authCard + " glass-card reveal-scale visible"}>
         <div className={styles.tabs}>
           <button 
-            className={isLogin ? styles.activeTab : ''} 
+            className={`${styles.tabButton} ${isLogin ? styles.activeTab : ''}`} 
             onClick={() => setIsLogin(true)}
           >
             Giriş Yap
           </button>
           <button 
-            className={!isLogin ? styles.activeTab : ''} 
+            className={`${styles.tabButton} ${!isLogin ? styles.activeTab : ''}`} 
             onClick={() => setIsLogin(false)}
           >
             Kayıt Ol
@@ -536,6 +536,7 @@ export default function GunlukPage() {
           </button>
         </form>
       </div>
+      <div style={{position:'fixed', bottom:10, right:10, fontSize:'10px', opacity:0.1, color:'white', pointerEvents:'none'}}>v3.2-forced</div>
     </div>
   );
 }
