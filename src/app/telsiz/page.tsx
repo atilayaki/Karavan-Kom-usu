@@ -368,7 +368,7 @@ export default function TelsizPage() {
                   <Link href={`/profil/${u.id}`} className={styles.friendInfo}>
                     <div className={styles.avatarWrap}>
                       <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
-                      <div className={`${styles.statusDot} ${isOnline ? styles.online : styles.offline}`}></div>
+                      <div className={styles.onlineDot}></div>
                     </div>
                     <div className={styles.friendDetails}>
                       <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
@@ -397,18 +397,21 @@ export default function TelsizPage() {
             <>
               <h3 className={styles.mt20}>📍 Yakındaki Komşular</h3>
               <div className={styles.friendsList}>
-                {nearbyUsers.map(u => (
+                {nearbyUsers
+                  .filter(u => onlineUsers.includes(u.id)) // Yakındakilerde de sadece online olanlar
+                  .map(u => (
                   <div key={`nearby-${u.id}`} className={styles.friendCard}>
-                    <div className={styles.friendInfo}>
+                    <Link href={`/profil/${u.id}`} className={styles.friendInfo}>
                       <div className={styles.avatarWrap}>
                         <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
+                        <div className={styles.onlineDot}></div>
                         <div className={styles.distanceBadge}>{u.distance_km.toFixed(1)} km</div>
                       </div>
                       <div className={styles.friendDetails}>
                         <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
                         <span className={styles.friendType}>{u.caravan_type || 'Bilinmiyor'}</span>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 ))}
               </div>
