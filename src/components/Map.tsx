@@ -6,11 +6,19 @@ import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
 
 function MapEvents({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
-  useMapEvents({
+  const map = useMapEvents({
     click(e) {
       if (onMapClick) onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
+
+  useEffect(() => {
+    // Force map to recalculate its container size
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }, [map]);
+
   return null;
 }
 
