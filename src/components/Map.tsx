@@ -57,7 +57,7 @@ export default function Map({
 
   const tileUrl = isDarkMode 
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   const validSpots = spots.filter(s => isValidLatLng(s?.lat, s?.lng));
   const validNotes = notes.filter(n => isValidLatLng(n?.lat, n?.lng));

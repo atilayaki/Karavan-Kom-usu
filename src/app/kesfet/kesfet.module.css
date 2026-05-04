@@ -6,7 +6,7 @@
 }
 
 .sidebar {
-  width: 400px;
+  width: 350px;
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
