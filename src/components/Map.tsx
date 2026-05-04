@@ -64,8 +64,8 @@ export default function Map({
       <LayersControl position="topright">
         <LayersControl.BaseLayer checked name="Modern Sokak">
           <TileLayer
-            attribution='&copy; JawgMaps'
-            url="https://{s}.tile.jawg.io/jawg-streets/{z}/{x}/{y}{r}.png?access-token=guest"
+            attribution='&copy; CARTO'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
         </LayersControl.BaseLayer>
         
