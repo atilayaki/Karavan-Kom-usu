@@ -474,32 +474,64 @@ export default function GunlukPage() {
     <div className={styles.container} ref={scrollRef}>
       <div className={styles.authCard + " glass-card reveal-scale visible"}>
         <div className={styles.tabs}>
-          <button className={isLogin ? styles.activeTab : ''} onClick={() => setIsLogin(true)}>Giriş Yap</button>
-          <button className={!isLogin ? styles.activeTab : ''} onClick={() => setIsLogin(false)}>Kayıt Ol</button>
+          <button 
+            className={isLogin ? styles.activeTab : ''} 
+            onClick={() => setIsLogin(true)}
+          >
+            Giriş Yap
+          </button>
+          <button 
+            className={!isLogin ? styles.activeTab : ''} 
+            onClick={() => setIsLogin(false)}
+          >
+            Kayıt Ol
+          </button>
         </div>
 
         <div className={styles.authHeader}>
           <h2>{isLogin ? 'Hoş Geldin Komşu!' : 'Aramıza Katıl'}</h2>
-          <p>{isLogin ? 'Yol arkadaşların seni bekliyor.' : 'Karavan günlüğünü tutmaya başlamak için hesap oluştur.'}</p>
+          <p>
+            {isLogin 
+              ? 'Yol arkadaşların seni bekliyor. Hemen oturum aç.' 
+              : 'Karavan günlüğünü tutmaya başlamak için hesap oluştur.'}
+          </p>
         </div>
 
         <form className={styles.form} onSubmit={handleAuth}>
           {!isLogin && (
             <div className={styles.inputGroup}>
               <label>Ad Soyad</label>
-              <input type="text" placeholder="Örn: Ahmet Yılmaz" value={fullName} onChange={(e) => setFullName(e.target.value)} required={!isLogin} />
+              <input 
+                type="text" 
+                placeholder="Örn: Ahmet Yılmaz" 
+                value={fullName} 
+                onChange={(e) => setFullName(e.target.value)} 
+                required={!isLogin} 
+              />
             </div>
           )}
           <div className={styles.inputGroup}>
-            <label>E-posta</label>
-            <input type="email" placeholder="komsu@karavan.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label>E-posta Adresi</label>
+            <input 
+              type="email" 
+              placeholder="komsu@karavan.com" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              required 
+            />
           </div>
           <div className={styles.inputGroup}>
             <label>Şifre</label>
-            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input 
+              type="password" 
+              placeholder="••••••••" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              required 
+            />
           </div>
           
-          <button type="submit" className="btn-primary" style={{marginTop: '10px'}} disabled={loading}>
+          <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
             {loading ? 'Bekleniyor...' : (isLogin ? 'Yola Çık' : 'Hesabı Oluştur')}
           </button>
         </form>

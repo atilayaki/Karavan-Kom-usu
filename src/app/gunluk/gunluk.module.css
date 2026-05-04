@@ -432,3 +432,100 @@
   opacity: 0.5;
   font-size: 0.9rem;
 }
+
+/* Auth Section */
+.authCard {
+  width: 100%;
+  max-width: 450px;
+  padding: 40px;
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  animation: reveal-scale 0.5s var(--ease-bounce);
+}
+
+.tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 5px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  gap: 5px;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: none;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.tabs button.activeTab {
+  background: var(--sunset-orange);
+  color: white;
+  opacity: 1;
+  box-shadow: 0 5px 15px rgba(255, 126, 95, 0.3);
+}
+
+.authHeader {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.authHeader h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.8rem;
+  color: var(--sunset-orange);
+  letter-spacing: -0.5px;
+}
+
+.authHeader p {
+  opacity: 0.6;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.inputGroup {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputGroup label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 5px;
+}
+
+.inputGroup input, 
+.inputGroup select, 
+.inputGroup textarea {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.inputGroup input:focus, 
+.inputGroup select:focus, 
+.inputGroup textarea:focus {
+  border-color: var(--sunset-orange);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(255, 126, 95, 0.1);
+}
+
+.inputGroup input::placeholder {
+  opacity: 0.3;
+}

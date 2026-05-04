@@ -35,14 +35,22 @@ export default function ProfilePage() {
     setLoading(true);
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      setMyId(user?.id || null);
+      // 1. Session ve User kontrolü (Hata toleranslı)
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUser = userData?.user;
+      setMyId(currentUser?.id || null);
+
+      // 2. Profil verisi çekme
+      if (!profileId) {
+        setLoading(false);
+        return;
+      }
 
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', profileId)
-        .single();
+        .maybeSingle(); // single() yerine maybeSingle() kullanarak çökme riskini azaltıyoruz
 
       if (profileError || !profileData) {
         setProfile(null);
@@ -52,13 +60,23 @@ export default function ProfilePage() {
 
       setProfile(profileData);
 
+      // 3. İstatistikleri güvenli çekme
       const fetchStats = async () => {
         try {
-          const { count: rc } = await supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', profileId);
-          const { count: fc } = await supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${profileId},friend_id.eq.${profileId}`).eq('status', 'accepted');
-          const { count: pc } = await supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', profileId);
-          setStats({ routes: rc || 0, friends: fc || 0, posts: pc || 0 });
-        } catch (e) { console.error("Stats error:", e); }
+          const [routesRes, friendsRes, postsRes] = await Promise.all([
+            supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', profileId),
+            supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${profileId},friend_id.eq.${profileId}`).eq('status', 'accepted'),
+            supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', profileId)
+          ]);
+          
+          setStats({ 
+            routes: routesRes.count || 0, 
+            friends: friendsRes.count || 0, 
+            posts: postsRes.count || 0 
+          });
+        } catch (e) { 
+          console.error("Stats fetching error:", e); 
+        }
       };
 
       const fetchAchievements = async () => {
