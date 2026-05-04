@@ -1,6 +1,6 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
@@ -59,7 +59,7 @@ export default function Map({
 
   return (
     <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 1 }} zoomControl={false}>
-      <L.Control.Zoom position="bottomright" />
+      <ZoomControl position="bottomright" />
       
       <LayersControl position="topright">
         <LayersControl.BaseLayer checked name="Modern Sokak">
