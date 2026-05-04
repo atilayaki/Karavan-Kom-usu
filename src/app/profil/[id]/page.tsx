@@ -10,8 +10,7 @@ import { useParams } from 'next/navigation';
 
 export default function ProfilePage() {
   const params = useParams();
-  const profileId = params.id as string;
-  const scrollRef = useScrollReveal();
+  const profileId = params?.id as string;
   
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +21,7 @@ export default function ProfilePage() {
   const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
   const [friendshipId, setFriendshipId] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -32,27 +32,37 @@ export default function ProfilePage() {
   }, [profileId]);
 
   const fetchData = async () => {
+    if (!profileId || profileId === 'undefined') {
+      console.error("Invalid Profile ID");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     
     try {
-      // 1. Session ve User kontrolü (Hata toleranslı)
-      const { data: userData } = await supabase.auth.getUser();
+      // 1. Session ve User kontrolü
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError) console.warn("Auth check error:", authError);
+      
       const currentUser = userData?.user;
       setMyId(currentUser?.id || null);
 
       // 2. Profil verisi çekme
-      if (!profileId) {
-        setLoading(false);
-        return;
-      }
-
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', profileId)
-        .maybeSingle(); // single() yerine maybeSingle() kullanarak çökme riskini azaltıyoruz
+        .maybeSingle();
 
-      if (profileError || !profileData) {
+      if (profileError) {
+        console.error("Profile Error:", profileError);
+        setLoading(false);
+        return;
+      }
+
+      if (!profileData) {
+        console.warn("No profile found for ID:", profileId);
         setProfile(null);
         setLoading(false);
         return;
@@ -60,7 +70,7 @@ export default function ProfilePage() {
 
       setProfile(profileData);
 
-      // 3. İstatistikleri güvenli çekme
+      // 3. Diğer verileri çek (Hatalar sayfayı bozmasın)
       const fetchStats = async () => {
         try {
           const [routesRes, friendsRes, postsRes] = await Promise.all([
@@ -74,39 +84,39 @@ export default function ProfilePage() {
             friends: friendsRes.count || 0, 
             posts: postsRes.count || 0 
           });
-        } catch (e) { 
-          console.error("Stats fetching error:", e); 
-        }
+        } catch (e) { console.error("Stats fetch fail"); }
       };
 
       const fetchAchievements = async () => {
         try {
           const { data } = await supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', profileId);
           if (data) setAchievements(data);
-        } catch (e) { console.warn("Achievements missing"); }
+        } catch (e) { }
       };
 
       const fetchFriendship = async () => {
-        if (currentUser && currentUser.id !== profileId) {
-          const { data } = await supabase
-            .from('friendships')
-            .select('*')
-            .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${currentUser.id})`)
-            .maybeSingle();
+        try {
+          if (currentUser && currentUser.id !== profileId) {
+            const { data } = await supabase
+              .from('friendships')
+              .select('*')
+              .or(`and(user_id.eq.${currentUser.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${currentUser.id})`)
+              .maybeSingle();
 
-          if (data) {
-            setFriendshipId(data.id);
-            if (data.status === 'accepted') setFriendshipStatus('accepted');
-            else if (data.user_id === currentUser.id) setFriendshipStatus('pending_sent');
-            else setFriendshipStatus('pending_received');
+            if (data) {
+              setFriendshipId(data.id);
+              if (data.status === 'accepted') setFriendshipStatus('accepted');
+              else if (data.user_id === currentUser.id) setFriendshipStatus('pending_sent');
+              else setFriendshipStatus('pending_received');
+            }
           }
-        }
+        } catch (e) { }
       };
 
       await Promise.allSettled([fetchStats(), fetchAchievements(), fetchFriendship()]);
 
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("Global Fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -138,6 +148,15 @@ export default function ProfilePage() {
     }
   };
 
+  if (error) return (
+    <div style={{height:'100vh', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', background:'var(--background)', color:'white', padding:'20px', textAlign:'center'}}>
+      <IconSOS size={48} color="var(--sunset-orange)" />
+      <h2 style={{marginTop:'20px'}}>Bir hata oluştu</h2>
+      <p style={{opacity:0.7, margin:'10px 0 20px'}}>{error}</p>
+      <Link href="/telsiz" className="btn-secondary">Geri Dön</Link>
+    </div>
+  );
+
   if (loading) return <div style={{height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--background)', color:'white'}}>Yükleniyor...</div>;
   
   if (!profile) return (
@@ -152,10 +171,10 @@ export default function ProfilePage() {
   const showContent = !profile.is_private || isOwner || friendshipStatus === 'accepted';
 
   return (
-    <div className={styles.container} ref={scrollRef}>
+    <div className={styles.container}>
       <div className={styles.glow} />
       
-      <header className={styles.header + " reveal"}>
+      <header className={styles.header}>
         <div className={styles.headerTop}>
           <div className={styles.avatarWrap} onClick={() => setIsZoomed(true)}>
             <div className={styles.avatar}>
@@ -203,7 +222,7 @@ export default function ProfilePage() {
       </header>
 
       <div className={styles.mainGrid}>
-        <aside className={styles.sidebar + " reveal"}>
+        <aside className={styles.sidebar}>
           <div className={styles.card + " glass-card"}>
             <h3>Hakkında</h3>
             <p>{profile.bio || "Merhaba! Ben bir karavancıyım."}</p>
@@ -227,7 +246,7 @@ export default function ProfilePage() {
           )}
         </aside>
 
-        <main className={styles.content + " reveal"}>
+        <main className={styles.content}>
           {!showContent ? (
             <div className={styles.privateCard + " glass-card"}>
               <div style={{fontSize: '3rem', marginBottom: '15px'}}>🔒</div>
