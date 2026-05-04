@@ -33,56 +33,73 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const fetchData = async () => {
     setLoading(true);
     
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    setMyId(user?.id || null);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      setMyId(user?.id || null);
 
-    // Get target profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', profileId)
-      .single();
-
-    if (!profileData) {
-      setLoading(false);
-      return;
-    }
-
-    setProfile(profileData);
-
-    // Get stats
-    const [routesRes, friendsRes, postsRes, achRes] = await Promise.all([
-      supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', profileId),
-      supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${profileId},friend_id.eq.${profileId}`).eq('status', 'accepted'),
-      supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', profileId),
-      supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', profileId)
-    ]);
-
-    setStats({
-      routes: routesRes.count || 0,
-      friends: friendsRes.count || 0,
-      posts: postsRes.count || 0
-    });
-    setAchievements(achRes.data || []);
-
-    // Check friendship status if logged in
-    if (user && user.id !== profileId) {
-      const { data: friendData } = await supabase
-        .from('friendships')
+      // Get target profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
         .select('*')
-        .or(`and(user_id.eq.${user.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${user.id})`)
+        .eq('id', profileId)
         .single();
 
-      if (friendData) {
-        setFriendshipId(friendData.id);
-        if (friendData.status === 'accepted') setFriendshipStatus('accepted');
-        else if (friendData.user_id === user.id) setFriendshipStatus('pending_sent');
-        else setFriendshipStatus('pending_received');
+      if (profileError || !profileData) {
+        console.error("Profile not found:", profileError);
+        setProfile(null);
+        setLoading(false);
+        return;
       }
-    }
 
-    setLoading(false);
+      setProfile(profileData);
+
+      // Fetch stats individually to avoid Promise.all failure if one table is missing
+      const fetchStats = async () => {
+        const { count: routesCount } = await supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', profileId);
+        const { count: friendsCount } = await supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${profileId},friend_id.eq.${profileId}`).eq('status', 'accepted');
+        const { count: postsCount } = await supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', profileId);
+        
+        setStats({
+          routes: routesCount || 0,
+          friends: friendsCount || 0,
+          posts: postsCount || 0
+        });
+      };
+
+      const fetchAchievements = async () => {
+        try {
+          const { data: achData } = await supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', profileId);
+          if (achData) setAchievements(achData);
+        } catch (e) {
+          console.warn("Achievements table might be missing:", e);
+        }
+      };
+
+      const fetchFriendship = async () => {
+        if (user && user.id !== profileId) {
+          const { data: friendData } = await supabase
+            .from('friendships')
+            .select('*')
+            .or(`and(user_id.eq.${user.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${user.id})`)
+            .maybeSingle();
+
+          if (friendData) {
+            setFriendshipId(friendData.id);
+            if (friendData.status === 'accepted') setFriendshipStatus('accepted');
+            else if (friendData.user_id === user.id) setFriendshipStatus('pending_sent');
+            else setFriendshipStatus('pending_received');
+          }
+        }
+      };
+
+      await Promise.allSettled([fetchStats(), fetchAchievements(), fetchFriendship()]);
+
+    } catch (err) {
+      console.error("Unexpected data fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const checkPresence = () => {
