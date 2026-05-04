@@ -441,7 +441,17 @@
 
 @media (max-width: 480px) {
   .logoText {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+  }
+  .container {
+    padding: 0 10px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .logoText {
+    display: none;
   }
 }
 

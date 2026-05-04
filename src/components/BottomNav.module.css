@@ -77,6 +77,16 @@
 @media (max-width: 768px) {
   .bottomNav {
     display: flex;
-    min-height: auto;
+    min-height: 88px;
+    padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
+  }
+  
+  .icon {
+    font-size: 1.6rem;
+  }
+  
+  .label {
+    font-size: 0.65rem;
+    margin-top: 2px;
   }
 }

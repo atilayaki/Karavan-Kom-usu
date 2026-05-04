@@ -581,55 +581,47 @@ html[data-tod="night"] {
   --forest-green-glow: rgba(135, 206, 235, 0.18);
 }
 
-/* --- Global Mobile Portrait Optimizations (A-Z Fix) --- */
 @media (max-width: 480px) {
   :root {
-    --nav-height: 65px;
-    --bottom-nav-height: 75px;
+    --nav-height: 64px;
+    --bottom-nav-height: 88px;
   }
   
   body {
     font-size: 14px;
-    -webkit-overflow-scrolling: touch;
-    overflow-x: hidden; /* Taşmaları engelle */
+    overflow-x: hidden;
     width: 100vw;
+    /* Alttan BottomNav + FAB payı bırak */
+    padding-bottom: calc(var(--bottom-nav-height) + 20px) !important;
   }
 
-  /* Global Konteyner Fix: Sıkışıklığı engelle, nefes aldır */
-  main, .container, .page-wrapper, .main-content {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
+  /* Global Konteyner Fix (Daha esnek hale getirildi) */
+  main, .container, .page-wrapper {
+    padding-left: 12px;
+    padding-right: 12px;
+    box-sizing: border-box;
   }
 
-  /* Floating Action Buttons (FAB) Çakışma Önleyici */
+  /* SOS Butonu Navbar Çakışması (TopNav.tsx içindeki sınıfı hedef alıyoruz) */
+  .sos-nav-btn span {
+    display: none !important; /* Mobilde metni gizle, sadece ikon kalsın */
+  }
+  
+  /* FAB Butonları (Dikey Kule Sistemi - Üst Üste Binmeyi Engeller) */
   .ambient-control {
-    bottom: 90px !important;
-    right: 15px !important;
-    z-index: 999;
-    transform: scale(0.85);
+    bottom: 110px !important; /* BottomNav'ın (88px) tam üzerinde */
+    right: 16px !important;
+    z-index: 2000;
   }
   
   .pwa-install-btn {
-    bottom: 155px !important;
-    right: 15px !important;
-    z-index: 999;
-    transform: scale(0.85);
+    bottom: 175px !important; /* Ambiyans butonunun üzerinde */
+    right: 16px !important;
+    z-index: 2000;
   }
 
-  /* Tipografi Fix: Metinlerin birbirine girmesini engelle */
-  h1 { font-size: 1.7rem !important; line-height: 1.2; margin-bottom: 0.5rem; }
-  h2 { font-size: 1.4rem !important; margin-bottom: 0.4rem; }
-  p { line-height: 1.5; }
-
-  /* Kart yapılarını mobilde dikey yap */
-  .glass-card, .card {
-    padding: 16px !important;
-    margin-bottom: 12px !important;
-    border-radius: 16px !important;
-  }
+  /* Tipografi */
+  h1 { font-size: 1.6rem !important; }
 }
 
 /* Scrollbarları mobilde gizle (Modern App Hissi) */

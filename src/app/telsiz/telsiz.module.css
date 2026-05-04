@@ -420,52 +420,58 @@
 @media (max-width: 480px) {
   .container {
     flex-direction: column;
-    height: calc(100dvh - 140px);
+    height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height));
+    margin-top: 0 !important; /* Layout'un marginTop'unu sıfırla veya uyumlu hale getir */
   }
 
   .sidebar { 
     width: 100%; 
-    height: 140px; /* Kanalları yatay bir bar gibi yapabiliriz veya küçük bir alan */
+    height: 100px;
     border-right: none;
     border-bottom: 1px solid var(--glass-border);
   }
 
-  .sidebarHeader { padding: 12px 15px; }
-  .sidebarHeader h2 { font-size: 1.1rem; display: block; }
+  .sidebarHeader { padding: 6px 10px; }
+  .sidebarHeader h2 { font-size: 0.9rem; }
   
   .channelList {
+    padding: 2px 10px;
+    gap: 6px;
+  }
+
+  .friendsList { display: none; }
+
+  .chatArea { height: calc(100% - 100px); }
+  
+  .chatHeader { 
+    padding: 8px 12px; 
+    gap: 8px;
+    min-height: 50px;
+  }
+  .chatHeader h3 { font-size: 0.85rem; }
+  
+  /* SOS butonu mobilde sadece ikon kalsın */
+  .sosButton span, .sosButton svg + text { display: none !important; }
+  .sosButton { 
+    padding: 0; 
+    border-radius: 50%; 
+    width: 36px; 
+    height: 36px; 
     display: flex;
-    padding: 5px 15px;
-    gap: 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    height: auto;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
-  
-  .channelList h3 { display: none; }
-  .channelBtn { 
-    width: auto; 
-    white-space: nowrap; 
-    padding: 6px 12px; 
-    font-size: 0.8rem;
-  }
+  .sosButton svg { margin: 0 !important; }
 
-  .friendsList { display: none; } /* Mobilde dikeyde çok kalabalık, ileride drawer yapılabilir */
-
-  .chatArea { height: calc(100% - 140px); }
-  .chatHeader { padding: 12px 15px; }
-  .chatHeader h3 { font-size: 1rem; }
-  
   .messagesContainer { 
-    padding: 15px; 
-    gap: 12px;
+    padding: 10px; 
+    gap: 8px;
   }
   
-  .messageWrapper { max-width: 90%; }
-  .messageBubble { padding: 10px 14px; font-size: 0.9rem; }
+  .messageWrapper { max-width: 95%; }
   
-  .inputArea { padding: 12px 15px; }
-  .diagnostic { display: none; }
+  .inputArea { padding: 8px 10px; }
 }
 
 @media (max-width: 768px) and (min-width: 481px) {
