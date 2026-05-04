@@ -83,12 +83,15 @@ export default function PazaryeriPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('marketplace_items')
-        .select(`*, profiles(full_name)`)
-        .order('created_at', { ascending: false });
+      let query = supabase.from('marketplace_items').select(`*, profiles(full_name)`).order('created_at', { ascending: false });
       
-      const dummyProducts: any[] = [
+      if (activeCategory !== 'Tümü') {
+        query = query.eq('category', activeCategory);
+      }
+
+      const { data, error } = await query;
+      
+      const dummyItems: any[] = [
         {
           id: 9991,
           title: '200W Katlanabilir Güneş Paneli - Sıfır Ayarında',
@@ -96,7 +99,7 @@ export default function PazaryeriPage() {
           price: 4500,
           category: 'Enerji & Elektrik',
           location_name: 'Muğla / Fethiye',
-          image_url: 'https://cphughtkvgnubndpyhli.supabase.co/storage/v1/object/public/marketplace/solar_panel_dummy.png', // I will update these with the real paths
+          image_url: 'https://images.unsplash.com/photo-1509391366360-feaf9fa44452?q=80&w=800&auto=format&fit=crop',
           profiles: { full_name: 'Ahmet Yılmaz' },
           created_at: new Date().toISOString()
         },
@@ -107,7 +110,7 @@ export default function PazaryeriPage() {
           price: 8200,
           category: 'Isıtma & Soğutma',
           location_name: 'Bursa / Nilüfer',
-          image_url: 'https://cphughtkvgnubndpyhli.supabase.co/storage/v1/object/public/marketplace/heater_dummy.png',
+          image_url: 'https://images.unsplash.com/photo-1594541818212-9b9ba1f80b27?q=80&w=800&auto=format&fit=crop',
           profiles: { full_name: 'Selin Aras' },
           created_at: new Date().toISOString()
         },
@@ -118,20 +121,20 @@ export default function PazaryeriPage() {
           price: 2100,
           category: 'Dış Donanım',
           location_name: 'Antalya / Kaş',
-          image_url: 'https://cphughtkvgnubndpyhli.supabase.co/storage/v1/object/public/marketplace/chairs_dummy.png',
+          image_url: 'https://images.unsplash.com/photo-1533626904905-cc52fd99285e?q=80&w=800&auto=format&fit=crop',
           profiles: { full_name: 'Can Gezgin' },
           created_at: new Date().toISOString()
         }
       ];
 
+      const filteredDummy = activeCategory === 'Tümü' 
+        ? dummyItems 
+        : dummyItems.filter(item => item.category === activeCategory);
+
       if (error) {
-        console.error("Marketplace fetch error:", error);
-        setProducts(dummyProducts);
-      } else if (data && data.length > 0) {
-        // Mix real and dummy for variety
-        setProducts([...data, ...dummyProducts]);
+        setProducts(filteredDummy);
       } else {
-        setProducts(dummyProducts);
+        setProducts([...(data || []), ...filteredDummy]);
       }
     } catch (err) {
       console.error("Unexpected error in fetchProducts:", err);
