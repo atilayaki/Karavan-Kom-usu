@@ -167,7 +167,13 @@ export default function Map({
           <Polyline
             key={`route-${route.id}`}
             positions={positions}
-            pathOptions={{ color: 'var(--sunset-orange)', weight: 5, opacity: 0.7, lineCap: 'round' }}
+            pathOptions={{ 
+              color: 'var(--sunset-orange)', 
+              weight: 6, 
+              opacity: 0.8, 
+              lineCap: 'round',
+              lineJoin: 'round'
+            }}
           >
             <Popup className="premium-popup">
               <div style={{padding:'5px'}}>
@@ -183,10 +189,26 @@ export default function Map({
         );
       })}
 
-      {draftRoute?.start && <Marker position={draftRoute.start} icon={icons.blue} />}
-      {draftRoute?.end && <Marker position={draftRoute.end} icon={icons.blue} />}
+      {draftRoute?.start && (
+        <Marker position={draftRoute.start} icon={icons.blue}>
+          <Popup className="premium-popup"><strong>Başlangıç</strong></Popup>
+        </Marker>
+      )}
+      {draftRoute?.end && (
+        <Marker position={draftRoute.end} icon={icons.blue}>
+          <Popup className="premium-popup"><strong>Varış</strong></Popup>
+        </Marker>
+      )}
       {draftRoute?.start && draftRoute?.end && (
-        <Polyline positions={[draftRoute.start, draftRoute.end]} pathOptions={{ color: 'var(--forest-green)', weight: 4, dashArray: '10, 10' }} />
+        <Polyline 
+          positions={[draftRoute.start, draftRoute.end]} 
+          pathOptions={{ 
+            color: 'var(--forest-green)', 
+            weight: 5, 
+            dashArray: '10, 15', 
+            opacity: 0.8 
+          }} 
+        />
       )}
     </MapContainer>
   );
