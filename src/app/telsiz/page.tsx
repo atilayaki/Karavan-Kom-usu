@@ -40,6 +40,9 @@ export default function TelsizPage() {
 
   // Initialize Auth & Data
   useEffect(() => {
+    // Force scroll to top on navigation to avoid shifted layout
+    window.scrollTo(0, 0);
+    
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
     });
