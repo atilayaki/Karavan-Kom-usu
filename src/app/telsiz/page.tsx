@@ -506,7 +506,7 @@ export default function TelsizPage() {
         
         <div className={styles.diagnostic}>
           <span className="pulse-dot" style={{width: '6px', height: '6px'}}></span>
-          STRICT EPHEMERAL v2.1 • ONLINE: {onlineUsers.length}
+          STRICT EPHEMERAL v2.3 • ONLINE: {onlineUsers.length}
         </div>
       </main>
     </div>
