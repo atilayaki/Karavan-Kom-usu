@@ -1,12 +1,8 @@
 .container {
   display: flex;
-  height: calc(100vh - 80px); /* Adjust based on your nav height */
+  height: calc(100vh - 80px);
   overflow: hidden;
-  position: fixed;
-  top: 80px;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  background: var(--background);
 }
 
 .sidebar {

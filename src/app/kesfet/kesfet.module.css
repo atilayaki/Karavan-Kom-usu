@@ -3,10 +3,11 @@
   height: calc(100vh - var(--nav-height));
   overflow: hidden;
   position: relative;
+  gap: 0; /* Boşluğu sıfırla */
 }
 
 .sidebar {
-  width: 350px;
+  width: 320px; /* Daha dar panel */
   background: var(--nav-bg);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
@@ -119,6 +120,8 @@
 .mapArea {
   flex: 1;
   position: relative;
+  margin: 0;
+  padding: 0;
 }
 
 .mapOverlay {
