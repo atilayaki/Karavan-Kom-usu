@@ -66,6 +66,14 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.2s;
+}
+
+.userInfo:hover {
+  opacity: 0.8;
 }
 
 .avatarWrap {
@@ -180,6 +188,13 @@
   color: var(--forest-green);
   display: block;
   margin-bottom: 4px;
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.commentAuthor:hover {
+  text-decoration: underline;
 }
 
 .commentText {

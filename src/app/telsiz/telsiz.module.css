@@ -78,13 +78,13 @@
 }
 
 .friendCard {
-  padding: 8px 12px;
+  padding: 4px;
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  cursor: pointer;
   transition: background 0.2s;
+  margin-bottom: 2px;
 }
 
 .friendCard:hover {
@@ -95,6 +95,22 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex: 1;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md);
+}
+
+.friendInfo:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+  .friendInfo:hover {
+    background: rgba(255,255,255,0.05);
+  }
 }
 
 .avatarWrap {
