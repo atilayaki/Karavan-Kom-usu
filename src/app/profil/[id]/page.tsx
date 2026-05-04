@@ -1,82 +1,142 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { useScrollReveal } from '@/hooks/useScrollReveal';
-import { useToast } from '@/components/Toast';
-import type { Profile, MarketplaceItem, Post, UserAchievement } from '@/lib/database.types';
-import { IconUser, IconCamp } from '@/components/Icons';
-import CityStickers from '@/components/CityStickers';
-import FollowButton from '@/components/FollowButton';
 import styles from './profil.module.css';
+import { useToast } from '@/components/Toast';
+import { useScrollReveal } from '@/hooks/useScrollReveal';
+import type { Profile, UserAchievement } from '@/lib/database.types';
+import { IconUser, IconMap, IconChat, IconCamp, IconVerified, IconRadio } from '@/components/Icons';
 
-type Tab = 'posts' | 'items' | 'achievements';
-
-export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  const scrollRef = useScrollReveal();
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: profileId } = use(params);
   const { showToast } = useToast();
-
+  const scrollRef = useScrollReveal();
+  
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
+  const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('posts');
-  const [stats, setStats] = useState({ posts: 0, items: 0, routes: 0, followers: 0, following: 0 });
+  const [actionLoading, setActionLoading] = useState(false);
+  const [stats, setStats] = useState({ routes: 0, friends: 0, posts: 0 });
+  const [achievements, setAchievements] = useState<UserAchievement[]>([]);
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    fetchData();
+    checkPresence();
+  }, [profileId]);
 
-    (async () => {
-      const [
-        { data: prof },
-        { data: postData },
-        { data: itemData },
-        { data: achData },
-        { count: routesCount },
-        { count: followersCount },
-        { count: followingCount },
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', id).single(),
-        supabase.from('posts').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabase.from('marketplace_items').select('*').eq('user_id', id).order('created_at', { ascending: false }),
-        supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', id),
-        supabase.from('routes').select('*', { count: 'exact', head: true }).eq('user_id', id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', id),
-        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', id),
-      ]);
+  const fetchData = async () => {
+    setLoading(true);
+    
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    setMyId(user?.id || null);
 
-      if (!mounted) return;
+    // Get target profile
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', profileId)
+      .single();
 
-      if (!prof) {
-        showToast('Profil bulunamadı.', 'error');
-        setLoading(false);
-        return;
-      }
-
-      setProfile(prof);
-      setPosts(postData || []);
-      setItems(itemData || []);
-      setAchievements(achData || []);
-      setStats({
-        posts: postData?.length || 0,
-        items: itemData?.length || 0,
-        routes: routesCount || 0,
-        followers: followersCount || 0,
-        following: followingCount || 0,
-      });
+    if (!profileData) {
       setLoading(false);
-    })();
+      return;
+    }
 
-    return () => { mounted = false; };
-  }, [id, showToast]);
+    setProfile(profileData);
+
+    // Get stats
+    const [routesRes, friendsRes, postsRes, achRes] = await Promise.all([
+      supabase.from('routes').select('id', { count: 'exact', head: true }).eq('user_id', profileId),
+      supabase.from('friendships').select('id', { count: 'exact', head: true }).or(`user_id.eq.${profileId},friend_id.eq.${profileId}`).eq('status', 'accepted'),
+      supabase.from('posts').select('id', { count: 'exact', head: true }).eq('user_id', profileId),
+      supabase.from('user_achievements').select('*, achievements(*)').eq('user_id', profileId)
+    ]);
+
+    setStats({
+      routes: routesRes.count || 0,
+      friends: friendsRes.count || 0,
+      posts: postsRes.count || 0
+    });
+    setAchievements(achRes.data || []);
+
+    // Check friendship status if logged in
+    if (user && user.id !== profileId) {
+      const { data: friendData } = await supabase
+        .from('friendships')
+        .select('*')
+        .or(`and(user_id.eq.${user.id},friend_id.eq.${profileId}),and(user_id.eq.${profileId},friend_id.eq.${user.id})`)
+        .single();
+
+      if (friendData) {
+        setFriendshipId(friendData.id);
+        if (friendData.status === 'accepted') setFriendshipStatus('accepted');
+        else if (friendData.user_id === user.id) setFriendshipStatus('pending_sent');
+        else setFriendshipStatus('pending_received');
+      }
+    }
+
+    setLoading(false);
+  };
+
+  const checkPresence = () => {
+    const channel = supabase.channel('online-users');
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      setIsOnline(Object.keys(state).includes(profileId));
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
+  };
+
+  const handleFriendAction = async () => {
+    if (!myId) return showToast("Etkileşim için giriş yapmalısınız.", "warning");
+    setActionLoading(true);
+
+    try {
+      if (friendshipStatus === 'none') {
+        const { data, error } = await supabase.from('friendships').insert([
+          { user_id: myId, friend_id: profileId, status: 'pending' }
+        ]).select().single();
+        if (error) throw error;
+        setFriendshipStatus('pending_sent');
+        setFriendshipId(data.id);
+        showToast("Arkadaşlık isteği gönderildi!", "success");
+      } 
+      else if (friendshipStatus === 'pending_received') {
+        const { error } = await supabase.from('friendships')
+          .update({ status: 'accepted' })
+          .eq('id', friendshipId);
+        if (error) throw error;
+        setFriendshipStatus('accepted');
+        showToast("Artık yol arkadaşısınız!", "success");
+      }
+      else if (friendshipStatus === 'accepted' || friendshipStatus === 'pending_sent') {
+        const confirmMsg = friendshipStatus === 'accepted' ? "Arkadaşlıktan çıkarmak istediğine emin misin?" : "İsteği iptal etmek istiyor musun?";
+        if (window.confirm(confirmMsg)) {
+          const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+          if (error) throw error;
+          setFriendshipStatus('none');
+          setFriendshipId(null);
+          showToast("İşlem tamamlandı.", "info");
+        }
+      }
+    } catch (error: any) {
+      showToast("Hata: " + error.message, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className="skeleton-loader" style={{ height: '300px', borderRadius: '24px' }}></div>
+      <div className={styles.container} style={{justifyContent: 'center', alignItems: 'center'}}>
+        <div className="pulse-dot"></div>
       </div>
     );
   }
@@ -84,151 +144,142 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   if (!profile) {
     return (
       <div className={styles.container}>
-        <div className={styles.notFound + ' glass-card'}>
-          <IconUser size={48} color="var(--sunset-orange)" />
-          <h2>Profil bulunamadı</h2>
-          <Link href="/" className="btn-primary">Ana sayfaya dön</Link>
+        <div className="glass-card" style={{padding: '40px', textAlign: 'center'}}>
+          <h2>Komşu Bulunamadı</h2>
+          <p>Aradığın karavancı henüz yola çıkmamış olabilir.</p>
+          <Link href="/" className="btn-primary" style={{marginTop: '20px', display: 'inline-block'}}>Ana Sayfaya Dön</Link>
         </div>
       </div>
     );
   }
 
-  const level = profile.level || Math.floor((profile.xp || 0) / 100) + 1;
+  const xp = profile.xp || 0;
+  const level = Math.floor(xp / 100) + 1;
 
   return (
     <div className={styles.container} ref={scrollRef}>
-      <header className={styles.profileHeader + ' glass-card reveal'}>
-        <div className={styles.avatarWrap}>
-          {profile.avatar_url ? (
-            <img src={profile.avatar_url} alt={profile.full_name || 'Üye'} />
-          ) : (
-            <IconUser size={64} color="var(--forest-green)" />
+      <div className={styles.profileCard + " glass-card reveal visible"}>
+        <div className={styles.header}>
+          <div className={styles.avatarWrapper}>
+            <div className={styles.avatarLarge}>
+              {profile.avatar_url ? (
+                <Image fill src={profile.avatar_url} alt={profile.full_name || 'Profil'} sizes="120px" />
+              ) : (
+                (profile.full_name || 'K').charAt(0).toUpperCase()
+              )}
+            </div>
+            {isOnline && <div className={styles.onlineBadge}></div>}
+          </div>
+          
+          <div className={styles.info}>
+            <div className={styles.nameRow}>
+              <h2>{profile.full_name || 'Gizli Komşu'}</h2>
+              {profile.is_verified && <IconVerified size={24} color="var(--forest-green)" />}
+            </div>
+            <span className={styles.username}>@{profile.username || 'karavanci'}</span>
+            <div className={styles.caravanTag}>
+              🚐 {profile.caravan_type || 'Gezgin'}
+            </div>
+            
+            {myId !== profileId && (
+              <div className={styles.actions}>
+                <button 
+                  className={`btn-${friendshipStatus === 'accepted' ? 'secondary' : 'primary'}`}
+                  onClick={handleFriendAction}
+                  disabled={actionLoading}
+                >
+                  {friendshipStatus === 'none' && '+ Arkadaş Ekle'}
+                  {friendshipStatus === 'pending_sent' && '⏳ İstek Gönderildi'}
+                  {friendshipStatus === 'pending_received' && '✅ İsteği Kabul Et'}
+                  {friendshipStatus === 'accepted' && '🤝 Yol Arkadaşı'}
+                </button>
+                <Link href={`/mesajlar/${profileId}`} className="btn-ghost" style={{background: 'rgba(255,255,255,0.05)'}}>
+                  <IconChat size={20} /> Mesaj
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.statsGrid}>
+          <div className={styles.statBox}>
+            <IconMap size={24} color="var(--sunset-orange)" />
+            <strong>{stats.routes}</strong>
+            <span>Rota</span>
+          </div>
+          <div className={styles.statBox}>
+            <IconUser size={24} color="var(--forest-green)" />
+            <strong>{stats.friends}</strong>
+            <span>Arkadaş</span>
+          </div>
+          <div className={styles.statBox}>
+            <IconCamp size={24} color="var(--forest-green)" />
+            <strong>{stats.posts}</strong>
+            <span>Paylaşım</span>
+          </div>
+        </div>
+
+        <div className={styles.gamification}>
+          <div className={styles.levelHeader}>
+            <div className={styles.levelLabel}>
+              <span>Karavancı Seviyesi</span>
+              <strong>{level}. Seviye Gezgin</strong>
+            </div>
+            <span style={{fontSize: '0.8rem', opacity: 0.7}}>{xp} XP</span>
+          </div>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${xp % 100}%` }}></div>
+          </div>
+          
+          {achievements.length > 0 && (
+            <div className={styles.badges}>
+              {achievements.map((ua: any) => (
+                <div key={ua.achievement_id} className={styles.badgeItem} title={ua.achievements?.description}>
+                  <div className={styles.badgeIcon}>{ua.achievements?.icon || '🏆'}</div>
+                  <span>{ua.achievements?.title}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        <div className={styles.headerInfo}>
-          <div className={styles.nameRow}>
-            <h1>{profile.full_name || 'Üye'}</h1>
-            {profile.is_verified && <span className={styles.verifiedBadge}>✓ Doğrulanmış</span>}
-            <FollowButton
-              targetUserId={id}
-              onCountChange={d => setStats(s => ({ ...s, followers: s.followers + d }))}
-            />
-          </div>
-          {profile.username && <div className={styles.username}>@{profile.username}</div>}
-          {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
-
-          <div className={styles.statsRow}>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{level}</span>
-              <span className={styles.statLabel}>Seviye</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{profile.xp || 0}</span>
-              <span className={styles.statLabel}>XP</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.followers}</span>
-              <span className={styles.statLabel}>Takipçi</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.following}</span>
-              <span className={styles.statLabel}>Takip</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.posts}</span>
-              <span className={styles.statLabel}>Paylaşım</span>
-            </div>
-            <div className={styles.statBox}>
-              <span className={styles.statValue}>{stats.routes}</span>
-              <span className={styles.statLabel}>Rota</span>
+        {(profile.battery_capacity || profile.solar_panel || profile.water_tank) && (
+          <div className={styles.garageSection}>
+            <h3><IconRadio size={18} /> Karavan Donanımı</h3>
+            <div className={styles.garageGrid}>
+              {profile.battery_capacity && (
+                <div className={styles.garageItem}>
+                  <label>Enerji / Akü</label>
+                  <span>{profile.battery_capacity}</span>
+                </div>
+              )}
+              {profile.solar_panel && (
+                <div className={styles.garageItem}>
+                  <label>Güneş Paneli</label>
+                  <span>{profile.solar_panel}</span>
+                </div>
+              )}
+              {profile.water_tank && (
+                <div className={styles.garageItem}>
+                  <label>Su Kapasitesi</label>
+                  <span>{profile.water_tank}</span>
+                </div>
+              )}
+              {profile.heating_system && (
+                <div className={styles.garageItem}>
+                  <label>Isıtma Sistemi</label>
+                  <span>{profile.heating_system}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </header>
-
-      {(profile.caravan_type || profile.battery_capacity || profile.solar_panel || profile.water_tank || profile.heating_system) && (
-        <section className={styles.garage + ' glass-card reveal'}>
-          <h3><IconCamp size={20} /> Karavan Garajı</h3>
-          <div className={styles.garageGrid}>
-            {profile.caravan_type && <div><span>Tip</span><strong>{profile.caravan_type}</strong></div>}
-            {profile.battery_capacity && <div><span>Akü</span><strong>{profile.battery_capacity}</strong></div>}
-            {profile.solar_panel && <div><span>Güneş Paneli</span><strong>{profile.solar_panel}</strong></div>}
-            {profile.water_tank && <div><span>Su Tankı</span><strong>{profile.water_tank}</strong></div>}
-            {profile.heating_system && <div><span>Isıtma</span><strong>{profile.heating_system}</strong></div>}
-          </div>
-        </section>
-      )}
-
-      <div className="reveal">
-        <CityStickers userId={id} />
-      </div>
-
-      <div className={styles.tabBar + ' reveal'}>
-        <button className={tab === 'posts' ? styles.tabActive : ''} onClick={() => setTab('posts')}>
-          Paylaşımlar ({stats.posts})
-        </button>
-        <button className={tab === 'items' ? styles.tabActive : ''} onClick={() => setTab('items')}>
-          İlanlar ({stats.items})
-        </button>
-        <button className={tab === 'achievements' ? styles.tabActive : ''} onClick={() => setTab('achievements')}>
-          Başarımlar ({achievements.length})
-        </button>
-      </div>
-
-      <div className={styles.tabContent}>
-        {tab === 'posts' && (
-          posts.length === 0
-            ? <div className={styles.empty}>Henüz paylaşım yok.</div>
-            : <div className={styles.postsGrid}>
-                {posts.map(p => (
-                  <div key={p.id} className={styles.postCard + ' glass-card'}>
-                    {p.image_url && <img src={p.image_url} alt={p.caption || ''} />}
-                    <div className={styles.postBody}>
-                      <p>{p.caption}</p>
-                      {p.location_name && <small>📍 {p.location_name}</small>}
-                    </div>
-                  </div>
-                ))}
-              </div>
         )}
 
-        {tab === 'items' && (
-          items.length === 0
-            ? <div className={styles.empty}>Henüz ilan yok.</div>
-            : <div className={styles.itemsGrid}>
-                {items.map(i => (
-                  <Link href={`/pazaryeri/${i.id}`} key={i.id} className={styles.itemCard + ' glass-card'}>
-                    {i.image_url && <img src={i.image_url} alt={i.title} />}
-                    <div className={styles.itemBody}>
-                      <h4>{i.title}</h4>
-                      <span className={styles.itemPrice}>{i.price.toLocaleString('tr-TR')} TL</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-        )}
-
-        {tab === 'achievements' && (
-          achievements.length === 0
-            ? <div className={styles.empty}>Henüz başarım yok.</div>
-            : <div className={styles.achievementsGrid}>
-                {achievements.map(ua => {
-                  const ach = Array.isArray(ua.achievements) ? ua.achievements[0] : ua.achievements;
-                  if (!ach) return null;
-                  return (
-                    <div key={ua.achievement_id} className={styles.achievementCard + ' glass-card'}>
-                      <div className={styles.achIcon} style={{ background: ach.badge_color || 'var(--forest-green-glow)' }}>
-                        {ach.icon}
-                      </div>
-                      <div>
-                        <h4>{ach.title}</h4>
-                        <p>{ach.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+        {profile.bio && (
+          <div className={styles.bioSection}>
+            <h3><IconUser size={18} /> Hakkında</h3>
+            <p className={styles.bioText}>{profile.bio}</p>
+          </div>
         )}
       </div>
     </div>

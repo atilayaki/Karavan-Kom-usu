@@ -287,7 +287,7 @@ export default function ManzaraPage() {
               notes.map((n) => (
                 <div key={`note-${n.id}`} className={styles.postCard + " glass-card"}>
                   <div className={styles.postHeader}>
-                    <div className={styles.userInfo}>
+                    <Link href={`/profil/${n.user_id}`} className={styles.userInfo}>
                       <div className={styles.avatarWrap}>
                         <div className={styles.avatar} style={{background: 'var(--forest-green-glow)'}}>📌</div>
                       </div>
@@ -295,7 +295,7 @@ export default function ManzaraPage() {
                         <h4>{n.profile_full_name || 'Gizli Karavancı'}</h4>
                         <span className={styles.location}>📍 {n.location_name || 'Konum belirtilmedi'} • {formatTime(n.created_at)}</span>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                   <p className={styles.postText} style={{fontStyle: 'italic', fontSize: '1.1rem', color: 'var(--forest-green)'}}>"{n.note}"</p>
                   <div className={styles.postFooter}>
@@ -313,7 +313,7 @@ export default function ManzaraPage() {
               routes.map((r) => (
                 <div key={`route-${r.id}`} className={styles.postCard + " glass-card"}>
                   <div className={styles.postHeader}>
-                    <div className={styles.userInfo}>
+                    <Link href={`/profil/${r.user_id}`} className={styles.userInfo}>
                       <div className={styles.avatarWrap}>
                         <div className={styles.avatar} style={{background: 'var(--sunset-glow)'}}>🛣️</div>
                       </div>
@@ -321,7 +321,7 @@ export default function ManzaraPage() {
                         <h4>{r.profile_full_name || 'Gizli Karavancı'}</h4>
                         <span className={styles.location}>{r.start_location_name} ➔ {r.end_location_name} • {formatTime(r.created_at)}</span>
                       </div>
-                    </div>
+                    </Link>
                   </div>
                   <h3 style={{margin: '12px 0 8px', color: 'var(--sunset-orange)'}}>{r.title}</h3>
                   {r.description && <p className={styles.postText}>{r.description}</p>}
@@ -340,7 +340,7 @@ export default function ManzaraPage() {
               <div key={post.id} className={styles.postCard + " glass-card"}>
                 
                 <div className={styles.postHeader}>
-                  <div className={styles.userInfo}>
+                  <Link href={`/profil/${post.user_id}`} className={styles.userInfo}>
                     <div className={styles.avatarWrap}>
                       <div className={styles.avatar}>{(post.profiles?.full_name || 'G').charAt(0)}</div>
                     </div>
@@ -351,7 +351,7 @@ export default function ManzaraPage() {
                       </h4>
                       <span className={styles.location}>📍 {post.location_name} • {formatTime(post.created_at)}</span>
                     </div>
-                  </div>
+                  </Link>
                   {user?.id === post.user_id && (
                     <button
                       className={styles.deleteBtn}
@@ -404,7 +404,7 @@ export default function ManzaraPage() {
                       <div className={styles.commentsList}>
                         {post.comments.map((c: any) => (
                           <div key={c.id} className={styles.commentItem}>
-                            <strong className={styles.commentAuthor}>{c.profiles?.full_name || 'Gizli Karavancı'}</strong>
+                            <Link href={`/profil/${c.user_id}`} className={styles.commentAuthor}>{c.profiles?.full_name || 'Gizli Karavancı'}</Link>
                             <p className={styles.commentText}>{c.comment}</p>
                           </div>
                         ))}

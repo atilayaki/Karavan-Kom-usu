@@ -332,7 +332,7 @@ export default function TelsizPage() {
                   if (!sender) return null;
                   return (
                     <div key={req.id} className={styles.friendCard}>
-                      <div className={styles.friendInfo}>
+                      <Link href={`/profil/${sender.id}`} className={styles.friendInfo}>
                         <div className={styles.avatarWrap}>
                           <div className={styles.avatar}>{(sender.full_name || 'K').charAt(0)}</div>
                         </div>
@@ -340,7 +340,7 @@ export default function TelsizPage() {
                           <span className={styles.friendName}>{sender.full_name || 'Gizli Karavancı'}</span>
                           <span className={styles.friendType}>{sender.caravan_type || 'Bilinmiyor'}</span>
                         </div>
-                      </div>
+                      </Link>
                       <div className={styles.friendActions}>
                         <button className={styles.acceptBtn} onClick={() => handleAcceptFriend(req.id, req.senderId)} title="Kabul et">✓</button>
                         <button className={styles.rejectBtn} onClick={() => handleRejectFriend(req.id)} title="Reddet">✕</button>
@@ -364,7 +364,7 @@ export default function TelsizPage() {
 
               return (
                 <div key={u.id} className={`${styles.friendCard} ${isPrivate && privateUser?.id === u.id ? styles.activeFriend : ''}`}>
-                  <div className={styles.friendInfo} onClick={() => { if (isAccepted) { setIsPrivate(true); setPrivateUser(u); } }}>
+                  <Link href={`/profil/${u.id}`} className={styles.friendInfo}>
                     <div className={styles.avatarWrap}>
                       <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
                       <div className={`${styles.statusDot} ${isOnline ? styles.online : styles.offline}`}></div>
@@ -373,7 +373,7 @@ export default function TelsizPage() {
                       <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
                       <span className={styles.friendType}>{u.caravan_type || 'Bilinmiyor'}</span>
                     </div>
-                  </div>
+                  </Link>
 
                   {isAccepted ? (
                     <div className={styles.friendActions}>
