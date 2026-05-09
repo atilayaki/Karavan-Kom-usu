@@ -28,6 +28,8 @@ export default function MesajlarPage() {
   const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<any>(null);
+  const activeChatRef = useRef<any>(null);
+  activeChatRef.current = activeChat;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -35,12 +37,11 @@ export default function MesajlarPage() {
       if (user) {
         fetchConversations(user.id);
         setupPresence(user.id);
+        setupInbox(user.id);
       }
     });
     return () => {
-      if (presenceChannelRef.current) {
-        supabase.removeChannel(presenceChannelRef.current);
-      }
+      if (presenceChannelRef.current) supabase.removeChannel(presenceChannelRef.current);
     };
   }, []);
 
@@ -80,6 +81,25 @@ export default function MesajlarPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   };
 
+  const setupInbox = (userId: string) => {
+    const channel = supabase
+      .channel(`inbox_${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages',
+        filter: `receiver_id=eq.${userId}`,
+      }, (payload) => {
+        const msg = payload.new as any;
+        if (activeChatRef.current && msg.sender_id === activeChatRef.current.id) {
+          setMessages(prev => [...prev, msg]);
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  };
+
   const fetchConversations = async (userId: string) => {
     setLoading(true);
     // Arkadaşları çek (Onaylanmış olanlar)
@@ -112,20 +132,6 @@ export default function MesajlarPage() {
   useEffect(() => {
     if (activeChat && user) {
       fetchMessages(activeChat.id);
-
-      const subscription = supabase
-        .channel(`dm_${user.id}_${activeChat.id}`)
-        .on('postgres_changes', { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'direct_messages',
-          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${activeChat.id}),and(sender_id.eq.${activeChat.id},receiver_id.eq.${user.id}))`
-        }, (payload) => {
-          setMessages(prev => [...prev, payload.new]);
-        })
-        .subscribe();
-
-      return () => { supabase.removeChannel(subscription); };
     }
   }, [activeChat, user]);
 
@@ -137,19 +143,31 @@ export default function MesajlarPage() {
     e.preventDefault();
     if (!newMessage.trim() || !user || !activeChat) return;
 
-    const text = newMessage;
+    const text = newMessage.trim();
     setNewMessage('');
 
-    const { error } = await supabase.from('direct_messages').insert([
-      {
-        sender_id: user.id,
-        receiver_id: activeChat.id,
-        content: text
-      }
-    ]);
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: activeChat.id,
+      content: text,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+
+    const { data, error } = await supabase
+      .from('direct_messages')
+      .insert({ sender_id: user.id, receiver_id: activeChat.id, content: text })
+      .select()
+      .single();
 
     if (error) {
       showToast("Mesaj gönderilemedi.", "error");
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+    } else if (data) {
+      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
     }
   };
 
