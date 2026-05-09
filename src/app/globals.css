@@ -603,12 +603,20 @@ html[data-tod="night"] {
 }
 
 /* Mesajlar sayfasında mobil sohbet açıkken arka plan scroll'u kilitlenir,
-   böylece iOS focus'ta sayfayı kaydırıp input'u klavyenin arkasına itmez. */
+   böylece iOS focus'ta sayfayı kaydırıp input'u klavyenin arkasına itmez.
+   Ayrıca üst Navbar ve alt BottomNav gizlenir — yoksa main'in stacking
+   context'i (z-index:1) yüzünden global z-index 1000+ olan bu nav'lar
+   sohbet overlay'inin üstüne çıkıp input'u kapatıyor. */
 body.mesajlar-fullscreen {
   overflow: hidden;
   position: fixed;
   width: 100%;
   height: 100%;
+}
+
+body.mesajlar-fullscreen [class*="Navbar-module"][class*="__navbar"],
+body.mesajlar-fullscreen [class*="BottomNav-module"][class*="__bottomNav"] {
+  display: none !important;
 }
 
 @media (max-width: 480px) {

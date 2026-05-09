@@ -313,6 +313,17 @@
     overflow: hidden;
     transform-origin: top left;
     will-change: transform, height;
+    /* Override .glass-card hover/transition - we set transform inline from JS
+       and don't want bounce animations or sticky-hover translateY firing on
+       touch and shifting the whole overlay. */
+    transition: none !important;
+    box-shadow: none;
+  }
+  .dmWrapper[data-mobile-view='chat']:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--glass-border);
+    cursor: auto;
   }
   .dmWrapper[data-mobile-view='chat'] .sidebar { display: none; }
   .dmWrapper[data-mobile-view='chat'] .chatArea {
