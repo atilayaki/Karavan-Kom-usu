@@ -379,7 +379,7 @@
 .modalHeader button {
   background: none;
   border: none;
-  color: white;
+  color: var(--foreground);
   font-size: 1.2rem;
   cursor: pointer;
   opacity: 0.5;
@@ -399,7 +399,7 @@
   border-radius: 16px;
   transition: all 0.2s ease;
   text-decoration: none;
-  color: white;
+  color: var(--foreground);
 }
 
 .friendRow:hover {
@@ -474,7 +474,7 @@
   padding: 12px;
   border: none;
   background: none;
-  color: white;
+  color: var(--foreground);
   font-weight: 600;
   cursor: pointer;
   border-radius: 8px;
@@ -521,17 +521,25 @@
   margin-left: 5px;
 }
 
-.inputGroup input, 
-.inputGroup select, 
+.inputGroup input,
+.inputGroup select,
 .inputGroup textarea {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 14px 18px;
-  color: white;
+  color: var(--foreground);
   font-size: 1rem;
   transition: all 0.3s ease;
   outline: none;
+}
+
+@media (prefers-color-scheme: light) {
+  .inputGroup input,
+  .inputGroup select,
+  .inputGroup textarea {
+    background: rgba(0, 0, 0, 0.03);
+  }
 }
 
 .inputGroup input:focus, 
