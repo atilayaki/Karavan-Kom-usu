@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import styles from './mesajlar.module.css';
 import Link from 'next/link';
 import Image from 'next/image';
-import { IconChat, IconUser, IconSOS, IconMap } from '@/components/Icons';
+import { IconChat } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 
 type PresenceStatus = 'online' | 'busy';
@@ -51,8 +51,17 @@ export default function MesajlarPage() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    const updateVH = () => {
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty('--visual-vh', `${vh}px`);
+    };
+    updateVH();
+    window.visualViewport?.addEventListener('resize', updateVH);
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.visualViewport?.removeEventListener('resize', updateVH);
+      document.documentElement.style.removeProperty('--visual-vh');
       if (presenceChannelRef.current) supabase.removeChannel(presenceChannelRef.current);
       if (inboxChannelRef.current) supabase.removeChannel(inboxChannelRef.current);
     };

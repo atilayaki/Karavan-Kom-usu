@@ -290,7 +290,7 @@
 @media (max-width: 900px) {
   .container {
     padding: 0;
-    height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    height: calc(var(--visual-vh, 100dvh) - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top));
     width: 100%;
     max-width: 100%;
   }

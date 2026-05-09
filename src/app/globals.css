@@ -602,6 +602,11 @@ html[data-tod="night"] {
   }
 }
 
+/* Klavye açıkken bottom nav gizlenir, yükseklik hesabını sıfırla */
+body.keyboard-open {
+  --bottom-nav-height: 0px;
+}
+
 @media (max-width: 480px) {
   body {
     font-size: 14px;
