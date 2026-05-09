@@ -1,20 +1,25 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
 import path from 'path';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { url, message } = await req.json();
+    const { url } = await req.json();
 
-    // Playwright scriptinin yolunu belirle
-    const scriptPath = path.resolve(process.cwd(), 'tools/social-commenter/index.mjs');
+    // Bu araç yalnızca yerel ortamda çalışır (Vercel/serverless desteklenmez)
+    if (process.env.VERCEL) {
+      return NextResponse.json({ success: false, error: 'Bu araç yalnızca yerel ortamda kullanılabilir.' }, { status: 400 });
+    }
 
-    // Bağımsız bir süreç olarak başlat
-    // Not: Bu süreç sunucudan bağımsız çalışacak şekilde spawn edilir
-    const child = spawn('node', [scriptPath, url], {
+    const { spawn } = await import('child_process');
+    const toolDir = path.join(process.cwd(), 'tools', 'social-commenter');
+    const scriptName = 'index.mjs';
+
+    const child = spawn('node', [scriptName, url], {
       detached: true,
       stdio: 'ignore',
-      cwd: path.resolve(process.cwd(), 'tools/social-commenter')
+      cwd: toolDir,
     });
 
     child.unref();
