@@ -98,7 +98,12 @@ export default function GunlukPage() {
       setForgotMode(false);
       setForgotEmail('');
     } catch (error: any) {
-      showToast(error.message || 'Bir hata oluştu.', 'error');
+      const msg = error.message || '';
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('too many')) {
+        showToast('Çok fazla istek gönderildi. Lütfen birkaç dakika bekleyip tekrar deneyin.', 'error');
+      } else {
+        showToast(msg || 'Bir hata oluştu.', 'error');
+      }
     } finally {
       setLoading(false);
     }
