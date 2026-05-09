@@ -62,7 +62,7 @@ export default function MesajlarPage() {
   // Mobile chat fullscreen: lock the page and size the chat to the visible viewport
   // so the input always sits right above the keyboard (Instagram DM behaviour).
   useEffect(() => {
-    const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
     const update = () => {
       const el = dmWrapperRef.current;
