@@ -4,6 +4,7 @@ import styles from './manzara.module.css';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import Script from 'next/script';
 import { uploadImage } from '@/lib/uploadImage';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -11,6 +12,9 @@ import type { Post, GeographicNote, Route } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import { IconHeart, IconChat, IconMap, IconCamp, IconUser, IconBell, IconShare, IconTrash } from '@/components/Icons';
 import PolaroidStory from '@/components/PolaroidStory';
+
+const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i;
+const isInstagramUrl = (url?: string | null): boolean => !!url && INSTAGRAM_URL_RE.test(url);
 
 export default function ManzaraPage() {
   const { showToast } = useToast();
@@ -23,7 +27,7 @@ export default function ManzaraPage() {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newPost, setNewPost] = useState({ caption: '', location_name: '' });
+  const [newPost, setNewPost] = useState({ caption: '', location_name: '', instagram_url: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,6 +58,16 @@ export default function ManzaraPage() {
   useEffect(() => {
     fetchFeed();
   }, [filter]);
+
+  // Re-process Instagram blockquotes whenever the feed changes after the
+  // embed.js script has already loaded. Without this, IG posts added on
+  // filter switch or after a fresh share render as raw <blockquote>s.
+  useEffect(() => {
+    const w = window as unknown as { instgrm?: { Embeds?: { process: () => void } } };
+    if (w.instgrm?.Embeds && posts.some(p => isInstagramUrl(p.image_url))) {
+      w.instgrm.Embeds.process();
+    }
+  }, [posts]);
 
   const handleShareLink = async (post: any) => {
     const shareData = {
@@ -170,15 +184,28 @@ export default function ManzaraPage() {
   const handleSharePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return showToast("Giriş yapmalısınız!", "warning");
-    if (!imageFile) return showToast("Lütfen bir fotoğraf seçin.", "warning");
-    
+
+    const igUrl = newPost.instagram_url.trim();
+    const hasIG = !!igUrl;
+    if (hasIG && !INSTAGRAM_URL_RE.test(igUrl)) {
+      return showToast("Geçersiz Instagram bağlantısı. Örn: https://www.instagram.com/p/...", "warning");
+    }
+    if (!hasIG && !imageFile) {
+      return showToast("Lütfen bir fotoğraf seçin veya Instagram bağlantısı yapıştırın.", "warning");
+    }
+
     setIsSubmitting(true);
-    
-    const uploadedUrl = await uploadImage(imageFile);
-    if (!uploadedUrl) {
-      showToast("Görsel yüklenemedi.", "error");
-      setIsSubmitting(false);
-      return;
+
+    let resolvedUrl: string | null = null;
+    if (hasIG) {
+      resolvedUrl = igUrl;
+    } else if (imageFile) {
+      resolvedUrl = await uploadImage(imageFile);
+      if (!resolvedUrl) {
+        showToast("Görsel yüklenemedi.", "error");
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     const { error } = await supabase.from('posts').insert([
@@ -186,14 +213,14 @@ export default function ManzaraPage() {
         user_id: user.id,
         caption: newPost.caption,
         location_name: newPost.location_name,
-        image_url: uploadedUrl
+        image_url: resolvedUrl,
       }
     ]);
 
     if (!error) {
       showToast("Manzaranız başarıyla paylaşıldı!", "success");
       setIsModalOpen(false);
-      setNewPost({ caption: '', location_name: '' });
+      setNewPost({ caption: '', location_name: '', instagram_url: '' });
       setImageFile(null);
       fetchPosts();
     } else {
@@ -246,7 +273,7 @@ export default function ManzaraPage() {
             <h2 className={styles.title}>Yol Manzarası</h2>
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {posts.some(p => p.image_url) && (
+            {posts.some(p => p.image_url && !isInstagramUrl(p.image_url)) && (
               <button className="btn-ghost" onClick={() => { setStoryStartIndex(0); setStoryOpen(true); }}>
                 📸 Polaroid Modu
               </button>
@@ -366,18 +393,33 @@ export default function ManzaraPage() {
                 <p className={styles.postText}>{post.caption}</p>
                 
                 {post.image_url && (
-                  <div className={styles.imageContainer} onClick={() => {
-                    const visiblePosts = posts.filter(p => p.image_url);
-                    const idx = visiblePosts.findIndex(p => p.id === post.id);
-                    setStoryStartIndex(Math.max(idx, 0));
-                    setStoryOpen(true);
-                  }} style={{ cursor: 'pointer' }}>
-                    <img
-                      src={post.image_url}
-                      alt="Manzara"
-                      className={styles.postImage}
-                    />
-                  </div>
+                  isInstagramUrl(post.image_url) ? (
+                    <div className={styles.igEmbedWrap}>
+                      <blockquote
+                        className="instagram-media"
+                        data-instgrm-permalink={post.image_url}
+                        data-instgrm-version="14"
+                        style={{ background: '#000', border: 0, margin: 0, padding: 0, width: '100%' }}
+                      >
+                        <a href={post.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', opacity: 0.6 }}>
+                          Instagram'da görüntüle
+                        </a>
+                      </blockquote>
+                    </div>
+                  ) : (
+                    <div className={styles.imageContainer} onClick={() => {
+                      const visiblePosts = posts.filter(p => p.image_url && !isInstagramUrl(p.image_url));
+                      const idx = visiblePosts.findIndex(p => p.id === post.id);
+                      setStoryStartIndex(Math.max(idx, 0));
+                      setStoryOpen(true);
+                    }} style={{ cursor: 'pointer' }}>
+                      <img
+                        src={post.image_url}
+                        alt="Manzara"
+                        className={styles.postImage}
+                      />
+                    </div>
+                  )
                 )}
 
                 <div className={styles.postFooter}>
@@ -436,9 +478,21 @@ export default function ManzaraPage() {
       {/* Polaroid Story */}
       {storyOpen && (
         <PolaroidStory
-          posts={posts}
+          posts={posts.filter(p => p.image_url && !isInstagramUrl(p.image_url))}
           startIndex={storyStartIndex}
           onClose={() => setStoryOpen(false)}
+        />
+      )}
+
+      {/* Instagram embed processor — only mounts when there's an IG post in the feed */}
+      {posts.some(p => isInstagramUrl(p.image_url)) && (
+        <Script
+          src="https://www.instagram.com/embed.js"
+          strategy="lazyOnload"
+          onLoad={() => {
+            const w = window as unknown as { instgrm?: { Embeds?: { process: () => void } } };
+            w.instgrm?.Embeds?.process();
+          }}
         />
       )}
 
@@ -461,19 +515,31 @@ export default function ManzaraPage() {
               </div>
               
               <div className={styles.inputGroup}>
-                <label>📸 Fotoğraf</label>
+                <label>📸 Fotoğraf {newPost.instagram_url.trim() && <span style={{opacity:0.5, fontWeight:400, fontSize:'0.8rem'}}>(opsiyonel — IG bağlantısı verildi)</span>}</label>
                 <div className={styles.fileDropZone}>
-                  <input 
-                    type="file" 
+                  <input
+                    type="file"
                     accept="image/*"
                     onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
-                    required
                     id="manzara-upload"
                   />
                   <label htmlFor="manzara-upload" className={styles.fileLabel}>
                     {imageFile ? imageFile.name : 'Görsel Seç veya Sürükle'}
                   </label>
                 </div>
+              </div>
+
+              <div className={styles.orDivider}>— ya da —</div>
+
+              <div className={styles.inputGroup}>
+                <label>📷 Instagram Bağlantısı (opsiyonel)</label>
+                <input
+                  type="url"
+                  placeholder="https://www.instagram.com/p/... veya /reel/..."
+                  value={newPost.instagram_url}
+                  onChange={(e) => setNewPost({...newPost, instagram_url: e.target.value})}
+                  pattern="https?://(www\.)?instagram\.com/(p|reel|tv)/.+"
+                />
               </div>
 
               <div className={styles.inputGroup}>

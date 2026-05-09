@@ -293,9 +293,49 @@
   .commentForm input { font-size: 16px; }
 }
 
+.orDivider {
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: 0.4;
+  margin: -2px 0 -2px;
+  font-weight: 600;
+}
+
+.igEmbedWrap {
+  margin: 14px 0 4px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.2);
+  min-height: 320px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.igEmbedWrap :global(.instagram-media) {
+  margin: 0 !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  border-radius: 16px !important;
+}
+
+.igEmbedWrap :global(iframe) {
+  width: 100% !important;
+  border-radius: 16px;
+}
+
 @media (max-width: 480px) {
   .container { padding: 16px 12px 24px; }
   .title { font-size: 1.6rem; }
+  .igEmbedWrap {
+    width: calc(100% + 24px);
+    margin-left: -12px;
+    margin-right: -12px;
+    border-radius: 0;
+  }
   .postCard {
     padding: 12px;
     border-radius: 16px;
