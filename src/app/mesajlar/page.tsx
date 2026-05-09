@@ -161,17 +161,50 @@ export default function MesajlarPage() {
 
   const fetchConversations = async (userId: string) => {
     setLoading(true);
-    // Arkadaşları çek (Onaylanmış olanlar)
+
+    // 1) Onaylanmış arkadaşlar
     const { data: friendsData } = await supabase
       .from('friendships')
       .select('*, sender:user_id(id, full_name, avatar_url, caravan_type), receiver:friend_id(id, full_name, avatar_url, caravan_type)')
       .eq('status', 'accepted')
       .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
 
-    if (friendsData) {
-      const chatList = friendsData.map(f => f.user_id === userId ? f.receiver : f.sender);
-      setConversations(chatList);
+    const fromFriends = (friendsData || []).map((f: any) => f.user_id === userId ? f.receiver : f.sender).filter(Boolean);
+
+    // 2) DM partnerleri — pazaryerinden gelen mesajlar gibi arkadaş olmayan kişiler de listede görünsün
+    const { data: dmRows } = await supabase
+      .from('direct_messages')
+      .select('sender_id, receiver_id')
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+
+    const partnerIds = new Set<string>();
+    (dmRows || []).forEach((m: any) => {
+      const other = m.sender_id === userId ? m.receiver_id : m.sender_id;
+      if (other && other !== userId) partnerIds.add(other);
+    });
+
+    // Arkadaş listesinde olmayan partnerlerin profillerini getir
+    const knownIds = new Set(fromFriends.map((p: any) => p.id));
+    const missing = [...partnerIds].filter(pid => !knownIds.has(pid));
+    let extraProfiles: any[] = [];
+    if (missing.length) {
+      const { data: profs } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url, caravan_type')
+        .in('id', missing);
+      extraProfiles = profs || [];
     }
+
+    // Birleştir, dedupe (id'ye göre)
+    const merged = [...fromFriends, ...extraProfiles];
+    const seen = new Set<string>();
+    const deduped = merged.filter((p: any) => {
+      if (!p?.id || seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    setConversations(deduped);
     setLoading(false);
   };
 

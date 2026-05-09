@@ -5,31 +5,43 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
-import { useScrollReveal } from '@/hooks/useScrollReveal';
 import type { MarketplaceItem } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import { IconHeart, IconUser, IconMap, IconCalendar, IconChat, IconTrash } from '@/components/Icons';
 import styles from './detail.module.css';
 
-interface ItemWithProfile extends MarketplaceItem {
-  profiles?: {
-    full_name: string | null;
-    avatar_url?: string | null;
-    caravan_type?: string | null;
-  };
+interface SellerProfile {
+  full_name: string | null;
+  avatar_url?: string | null;
+  caravan_type?: string | null;
+  is_verified?: boolean;
+  created_at?: string;
 }
+
+interface ItemWithProfile extends MarketplaceItem {
+  profiles?: SellerProfile;
+}
+
+const QUICK_TEMPLATES = [
+  'Merhaba, bu ürün hâlâ satılık mı?',
+  'Pazarlık şansı var mı?',
+  'Satın almak istiyorum, biraz daha detay verebilir misiniz?',
+];
 
 export default function MarketplaceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { showToast } = useToast();
-  const scrollRef = useScrollReveal();
 
   const [item, setItem] = useState<ItemWithProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [related, setRelated] = useState<MarketplaceItem[]>([]);
+
+  const [msgText, setMsgText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -41,7 +53,7 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
 
       const { data, error } = await supabase
         .from('marketplace_items')
-        .select(`*, profiles(full_name, avatar_url, caravan_type)`)
+        .select(`*, profiles(full_name, avatar_url, caravan_type, is_verified, created_at)`)
         .eq('id', id)
         .single();
 
@@ -119,6 +131,31 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
     }
   };
 
+  const sendMessage = async () => {
+    if (!user || !item) return;
+    const text = msgText.trim();
+    if (!text) {
+      showToast('Mesaj boş olamaz.', 'info');
+      return;
+    }
+    setSending(true);
+    const prefix = `[İlan: ${item.title}]\n`;
+    const content = text.startsWith('[İlan:') ? text : prefix + text;
+    const { error } = await supabase.from('direct_messages').insert({
+      sender_id: user.id,
+      receiver_id: item.user_id,
+      content,
+    });
+    setSending(false);
+    if (error) {
+      showToast('Mesaj gönderilemedi: ' + error.message, 'error');
+    } else {
+      setSent(true);
+      setMsgText('');
+      showToast('Mesajınız gönderildi!', 'success');
+    }
+  };
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -131,30 +168,50 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
 
   const isOwner = user?.id === item.user_id;
   const createdDate = new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const sellerSince = item.profiles?.created_at
+    ? new Date(item.profiles.created_at).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
+    : null;
 
   return (
-    <div className={styles.container} ref={scrollRef}>
+    <div className={styles.container}>
       <Link href="/pazaryeri" className={styles.backLink}>← Pazaryerine Dön</Link>
 
       <div className={styles.layout}>
-        <div className={styles.imageSection + ' glass-card reveal'}>
+        <div className={styles.imageSection + ' glass-card'}>
           {item.image_url ? (
             <img src={item.image_url} alt={item.title} />
           ) : (
-            <div className={styles.imagePlaceholder}>Görsel Yok</div>
+            <div className={styles.imagePlaceholder}>
+              <span>📦</span>
+              <span>Görsel paylaşılmamış</span>
+            </div>
           )}
         </div>
 
-        <div className={styles.infoSection + ' reveal'}>
+        <div className={styles.infoSection}>
           <span className={styles.categoryBadge}>{item.category}</span>
           <h1 className={styles.title}>{item.title}</h1>
           <div className={styles.price}>{item.price.toLocaleString('tr-TR')} TL</div>
 
-          <div className={styles.meta}>
+          <div className={styles.specsGrid + ' glass-card'}>
+            <div className={styles.specRow}>
+              <span className={styles.specLabel}>İlan No</span>
+              <span className={styles.specValue}>#{item.id}</span>
+            </div>
+            <div className={styles.specRow}>
+              <span className={styles.specLabel}>Kategori</span>
+              <span className={styles.specValue}>{item.category}</span>
+            </div>
             {item.location_name && (
-              <div className={styles.metaItem}><IconMap size={16} /> {item.location_name}</div>
+              <div className={styles.specRow}>
+                <span className={styles.specLabel}><IconMap size={14} /> Konum</span>
+                <span className={styles.specValue}>{item.location_name}</span>
+              </div>
             )}
-            <div className={styles.metaItem}><IconCalendar size={16} /> {createdDate}</div>
+            <div className={styles.specRow}>
+              <span className={styles.specLabel}><IconCalendar size={14} /> İlan Tarihi</span>
+              <span className={styles.specValue}>{createdDate}</span>
+            </div>
           </div>
 
           <div className={styles.sellerCard + ' glass-card'}>
@@ -166,30 +223,89 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
                   <IconUser size={28} />
                 )}
               </div>
-              <div>
-                <div className={styles.sellerName}>{item.profiles?.full_name || 'Üye'}</div>
+              <div className={styles.sellerMeta}>
+                <div className={styles.sellerName}>
+                  {item.profiles?.full_name || 'Üye'}
+                  {item.profiles?.is_verified && <span className={styles.verifiedDot} title="Doğrulanmış üye">✓</span>}
+                </div>
                 {item.profiles?.caravan_type && (
                   <div className={styles.sellerType}>{item.profiles.caravan_type}</div>
+                )}
+                {sellerSince && (
+                  <div className={styles.sellerSince}>Üyelik: {sellerSince}</div>
                 )}
               </div>
             </div>
             <Link href={`/profil/${item.user_id}`} className="btn-ghost">Profili Gör</Link>
           </div>
 
+          {!isOwner && (
+            <div className={styles.contactCard + ' glass-card'}>
+              <div className={styles.contactHeader}>
+                <IconChat size={18} />
+                <h3>Satıcıyla İletişime Geç</h3>
+              </div>
+
+              {!user ? (
+                <div className={styles.contactBody}>
+                  <p className={styles.contactHint}>Mesaj göndermek için giriş yapmalısın.</p>
+                  <Link href="/gunluk" className="btn-primary" style={{ alignSelf: 'flex-start', textDecoration: 'none' }}>Giriş Yap</Link>
+                </div>
+              ) : sent ? (
+                <div className={styles.contactBody}>
+                  <p className={styles.sentMessage}>✓ Mesajınız satıcıya iletildi.</p>
+                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <button type="button" className="btn-ghost" onClick={() => setSent(false)}>Yeni Mesaj</button>
+                    <Link href="/mesajlar" className="btn-primary" style={{ textDecoration: 'none' }}>Sohbete Devam Et →</Link>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.contactBody}>
+                  <div className={styles.templates}>
+                    {QUICK_TEMPLATES.map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        className={styles.templateChip}
+                        onClick={() => setMsgText(t)}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    className={styles.messageInput}
+                    rows={4}
+                    placeholder="Satıcıya mesajınızı yazın…"
+                    value={msgText}
+                    onChange={(e) => setMsgText(e.target.value)}
+                    maxLength={500}
+                  />
+                  <div className={styles.contactFooter}>
+                    <span className={styles.charCount}>{msgText.length}/500</span>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={sendMessage}
+                      disabled={sending || !msgText.trim()}
+                    >
+                      {sending ? 'Gönderiliyor…' : 'Mesaj Gönder'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className={styles.actions}>
-            {!isOwner && (
-              <Link href={`/mesajlar/${item.user_id}`} className="btn-primary" style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}>
-                <IconChat size={16} /> Satıcıyla İletişim
-              </Link>
-            )}
             <button onClick={toggleBookmark} className={`btn-secondary ${isBookmarked ? styles.activeBookmark : ''}`}>
               <IconHeart size={16} filled={isBookmarked} />
               {isBookmarked ? 'Favorilerde' : 'Favorile'}
             </button>
-            <button onClick={handleShare} className="btn-ghost" aria-label="Paylaş">Paylaş</button>
+            <button onClick={handleShare} className="btn-ghost">Paylaş</button>
             {isOwner && (
               <button onClick={handleDelete} className="btn-ghost" style={{ color: 'var(--sunset-orange)' }}>
-                <IconTrash size={16} /> Sil
+                <IconTrash size={16} /> İlanı Sil
               </button>
             )}
           </div>
@@ -197,14 +313,14 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {item.description && (
-        <section className={styles.descriptionCard + ' glass-card reveal'}>
+        <section className={styles.descriptionCard + ' glass-card'}>
           <h3>Açıklama</h3>
           <p>{item.description}</p>
         </section>
       )}
 
       {related.length > 0 && (
-        <section className={styles.relatedSection + ' reveal'}>
+        <section className={styles.relatedSection}>
           <h3>Benzer İlanlar</h3>
           <div className={styles.relatedGrid}>
             {related.map(r => (

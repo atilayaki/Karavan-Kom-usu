@@ -38,8 +38,16 @@
 }
 
 .imagePlaceholder {
-  opacity: 0.3;
-  font-size: 1.2rem;
+  opacity: 0.45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+
+.imagePlaceholder span:first-child {
+  font-size: 3rem;
 }
 
 .infoSection {
@@ -85,12 +93,175 @@
   font-size: 0.9rem;
 }
 
+.specsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.specRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-right: 1px solid var(--glass-border);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.specRow:nth-child(2n) { border-right: none; }
+.specRow:nth-last-child(-n+2) { border-bottom: none; }
+.specRow:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: none; }
+
+.specLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.55;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.specValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .sellerCard {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
   gap: 12px;
+}
+
+.sellerMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.verifiedDot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--forest-green);
+  color: white;
+  font-size: 0.7rem;
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.sellerSince {
+  font-size: 0.72rem;
+  opacity: 0.5;
+}
+
+.contactCard {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contactHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contactHeader h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.contactBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contactHint {
+  margin: 0;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
+.templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.templateChip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.templateChip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--sunset-orange);
+}
+
+.templateChip:active {
+  transform: scale(0.98);
+}
+
+.messageInput {
+  width: 100%;
+  resize: vertical;
+  min-height: 96px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.messageInput:focus {
+  border-color: var(--sunset-orange);
+}
+
+.contactFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.charCount {
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
+
+.sentMessage {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--forest-green-glow);
+  border-radius: 12px;
+  color: var(--forest-green);
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
 .sellerInfo {
@@ -220,8 +391,14 @@
   .title { font-size: 1.25rem; }
   .price { font-size: 1.5rem; }
   .meta { gap: 10px; font-size: 0.82rem; }
+  .specsGrid { grid-template-columns: 1fr; }
+  .specRow { border-right: none; }
+  .specRow:nth-last-child(2) { border-bottom: 1px solid var(--glass-border); }
   .sellerCard { flex-direction: column; align-items: flex-start; gap: 14px; padding: 14px; }
   .sellerCard a { width: 100%; text-align: center; }
+  .contactCard { padding: 14px; }
+  .contactFooter { flex-direction: column-reverse; align-items: stretch; }
+  .contactFooter button { width: 100%; }
   .actions { flex-direction: column; }
   .actions > * { width: 100%; justify-content: center; }
   .descriptionCard { padding: 18px; margin-bottom: 24px; }
