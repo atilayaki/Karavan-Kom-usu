@@ -24,6 +24,11 @@ export default function GunlukPage() {
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [authChecking, setAuthChecking] = useState(true);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -79,6 +84,49 @@ export default function GunlukPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     showToast("Güvenli çıkış yapıldı.", "info");
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/sifre-yenile`,
+      });
+      if (error) throw error;
+      showToast('Şifre sıfırlama bağlantısı e-postanıza gönderildi.', 'success');
+      setForgotMode(false);
+      setForgotEmail('');
+    } catch (error: any) {
+      showToast(error.message || 'Bir hata oluştu.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== newPasswordConfirm) {
+      showToast('Şifreler eşleşmiyor.', 'error');
+      return;
+    }
+    if (newPassword.length < 6) {
+      showToast('Şifre en az 6 karakter olmalıdır.', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      showToast('Şifreniz başarıyla güncellendi!', 'success');
+      setNewPassword('');
+      setNewPasswordConfirm('');
+      setShowPasswordChange(false);
+    } catch (error: any) {
+      showToast(error.message || 'Bir hata oluştu.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -424,6 +472,47 @@ export default function GunlukPage() {
               </button>
             </div>
           </form>
+
+          <div style={{marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px'}}>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{width: '100%', fontSize: '0.85rem'}}
+              onClick={() => setShowPasswordChange(!showPasswordChange)}
+            >
+              {showPasswordChange ? '↑ Şifre Değiştirmeyi Kapat' : '🔒 Şifre Değiştir'}
+            </button>
+
+            {showPasswordChange && (
+              <form onSubmit={handleChangePassword} style={{marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px'}}>
+                <div className={styles.inputGroup}>
+                  <label>Yeni Şifre</label>
+                  <input
+                    type="password"
+                    placeholder="En az 6 karakter"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className={styles.inputGroup}>
+                  <label>Yeni Şifre (Tekrar)</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPasswordConfirm}
+                    onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         {showFriendsModal && (
@@ -497,44 +586,74 @@ export default function GunlukPage() {
           </p>
         </div>
 
-        <form className={styles.form} onSubmit={handleAuth}>
-          {!isLogin && (
+        {forgotMode ? (
+          <form className={styles.form} onSubmit={handleForgotPassword}>
             <div className={styles.inputGroup}>
-              <label>Ad Soyad</label>
-              <input 
-                type="text" 
-                placeholder="Örn: Ahmet Yılmaz" 
-                value={fullName} 
-                onChange={(e) => setFullName(e.target.value)} 
-                required={!isLogin} 
+              <label>E-posta Adresi</label>
+              <input
+                type="email"
+                placeholder="komsu@karavan.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                required
               />
             </div>
-          )}
-          <div className={styles.inputGroup}>
-            <label>E-posta Adresi</label>
-            <input 
-              type="email" 
-              placeholder="komsu@karavan.com" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <label>Şifre</label>
-            <input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
-          
-          <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
-            {loading ? 'Bekleniyor...' : (isLogin ? 'Yola Çık' : 'Hesabı Oluştur')}
-          </button>
-        </form>
+            <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
+              {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
+            </button>
+            <button type="button" className="btn-ghost" style={{marginTop: '8px', width: '100%'}} onClick={() => setForgotMode(false)}>
+              Geri Dön
+            </button>
+          </form>
+        ) : (
+          <form className={styles.form} onSubmit={handleAuth}>
+            {!isLogin && (
+              <div className={styles.inputGroup}>
+                <label>Ad Soyad</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Ahmet Yılmaz"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required={!isLogin}
+                />
+              </div>
+            )}
+            <div className={styles.inputGroup}>
+              <label>E-posta Adresi</label>
+              <input
+                type="email"
+                placeholder="komsu@karavan.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className={styles.inputGroup}>
+              <label>Şifre</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {isLogin && (
+                <button
+                  type="button"
+                  style={{background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sunset-orange)', fontSize: '0.8rem', textAlign: 'right', padding: '4px 0', width: '100%'}}
+                  onClick={() => { setForgotMode(true); setForgotEmail(email); }}
+                >
+                  Şifremi Unuttum
+                </button>
+              )}
+            </div>
+
+            <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
+              {loading ? 'Bekleniyor...' : (isLogin ? 'Yola Çık' : 'Hesabı Oluştur')}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
