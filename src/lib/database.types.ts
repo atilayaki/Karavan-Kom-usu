@@ -34,6 +34,8 @@ export interface UserAchievement {
 
 export interface WeatherCurrent {
   temperature: number;
+  apparent_temperature?: number;
+  precipitation_probability?: number;
   windspeed: number;
   weathercode: number;
 }

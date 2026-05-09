@@ -1,0 +1,287 @@
+/* ─── Overlay ─── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: overlayIn 0.35s ease forwards;
+}
+
+.overlayOut {
+  animation: overlayOut 0.35s ease forwards;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes overlayOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ─── Card ─── */
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--background, #0f1a0f);
+  border: 1px solid var(--glass-border, rgba(255,255,255,0.1));
+  border-radius: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: cardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.cardOut {
+  animation: cardOut 0.3s ease forwards;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.88) translateY(24px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+@keyframes cardOut {
+  from { opacity: 1; transform: scale(1)    translateY(0); }
+  to   { opacity: 0; transform: scale(0.92) translateY(16px); }
+}
+
+/* ─── Skip button ─── */
+.skipBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: 'Outfit', sans-serif;
+}
+
+.skipBtn:hover {
+  background: rgba(255,255,255,0.12);
+  color: white;
+}
+
+/* ─── Hero illustration ─── */
+.hero {
+  position: relative;
+  height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.heroGlow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 60%, rgba(255,255,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.heroIcon {
+  font-size: 6.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.5));
+  animation: iconBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes iconBounce {
+  from { transform: scale(0.5) translateY(20px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+.heroSubtitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ─── Slide animations ─── */
+.slideIn {
+  animation: slideInForward 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.slideInBack {
+  animation: slideInBackward 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes slideInForward {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInBackward {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Content ─── */
+.content {
+  padding: 24px 28px 16px;
+  flex: 1;
+}
+
+.title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.desc {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  opacity: 0.75;
+  margin: 0 0 16px 0;
+}
+
+/* ─── Feature list ─── */
+.features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.featureItem {
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ─── Footer ─── */
+.footer {
+  padding: 14px 24px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  gap: 12px;
+}
+
+/* Progress bar + step counter */
+.dots {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.stepCounter {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  opacity: 0.45;
+  font-family: 'Outfit', sans-serif;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--sunset-orange, #ff8c42);
+  border-radius: 2px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* keep legacy dot/dotActive to avoid TS errors if referenced */
+.dot { display: none; }
+.dotActive { display: none; }
+
+/* Nav buttons */
+.navBtns {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.backNavBtn {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  padding: 10px 16px;
+  border-radius: var(--radius-full, 999px);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.backNavBtn:hover { background: rgba(255,255,255,0.13); }
+
+.nextBtn {
+  background: var(--sunset-orange, #ff8c42);
+  border: none;
+  color: white;
+  padding: 10px 22px;
+  border-radius: var(--radius-full, 999px);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(255,140,66,0.35);
+}
+
+.nextBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(255,140,66,0.5);
+}
+
+.nextBtn:active { transform: scale(0.97); }
+
+/* ─── Mobile ─── */
+@media (max-width: 480px) {
+  .card { max-width: 100%; border-radius: 24px 24px 0 0; max-height: 96dvh; overflow-y: auto; }
+  .overlay { align-items: flex-end; padding: 0; }
+  .hero { height: 210px; }
+  .heroIcon { font-size: 5.5rem; }
+  .content { padding: 20px 20px 12px; }
+  .title { font-size: 1.35rem; }
+  .footer { padding: 12px 20px 28px; }
+  .cardIn { animation: cardInMobile 0.4s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
+}
+
+@keyframes cardInMobile {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}

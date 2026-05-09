@@ -5,33 +5,21 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo } from 'react';
 
-// Mobile / flex-layout fix: when the map mounts inside a flex item that
-// resolves its height after first paint (or after the keyboard closes,
-// orientation changes, etc.) Leaflet computes a 0×0 canvas and never paints
-// tiles. Listen for size changes on the container and re-validate.
 function MapResizeFix() {
   const map = useMap();
   useEffect(() => {
     const container = map.getContainer();
-
-    // Sequential invalidation covers: SSR-to-CSR hydration, flex settle,
-    // tab activation, and font/CSS load shifts.
     const timers = [0, 100, 300, 700, 1500].map((d) =>
       setTimeout(() => map.invalidateSize(), d)
     );
-
-    // ResizeObserver covers everything the timers miss (orientation, parent
-    // grow/shrink, dynamic toolbar on iOS).
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(() => map.invalidateSize());
       ro.observe(container);
     }
-
     const onWinResize = () => map.invalidateSize();
     window.addEventListener('resize', onWinResize);
     window.addEventListener('orientationchange', onWinResize);
-
     return () => {
       timers.forEach(clearTimeout);
       ro?.disconnect();
@@ -39,6 +27,16 @@ function MapResizeFix() {
       window.removeEventListener('orientationchange', onWinResize);
     };
   }, [map]);
+  return null;
+}
+
+function FlyToSpot({ spot }: { spot: { lat: number; lng: number } | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (spot && typeof spot.lat === 'number' && typeof spot.lng === 'number') {
+      map.flyTo([spot.lat, spot.lng], Math.max(map.getZoom(), 13), { animate: true, duration: 0.8 });
+    }
+  }, [spot, map]);
   return null;
 }
 
@@ -66,6 +64,7 @@ export default function Map({
   onMapClick,
   draftRoute,
   userLocation,
+  selectedSpot,
 }: {
   spots?: any[];
   notes?: any[];
@@ -73,6 +72,7 @@ export default function Map({
   onMapClick?: (lat: number, lng: number) => void;
   draftRoute?: { start: [number, number] | null; end: [number, number] | null };
   userLocation?: { lat: number; lng: number } | null;
+  selectedSpot?: { lat: number; lng: number } | null;
 }) {
   const icons = useMemo(() => ({
     green:  new L.Icon({ iconUrl: `${ICON_BASE}/marker-icon-2x-green.png`,  shadowUrl: SHADOW, iconSize: [25, 41], iconAnchor: [12, 41] }),
@@ -97,39 +97,25 @@ export default function Map({
   return (
     <MapContainer center={center} zoom={6} style={{ height: '100%', width: '100%', zIndex: 1 }} zoomControl={false}>
       <ZoomControl position="bottomright" />
-      
+
       <LayersControl position="topright">
         <LayersControl.BaseLayer checked name="Modern Sokak">
-          <TileLayer
-            attribution='&copy; CARTO'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-          />
+          <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
         </LayersControl.BaseLayer>
-        
         <LayersControl.BaseLayer name="Premium Uydu">
-          <TileLayer
-            attribution='&copy; Esri'
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
+          <TileLayer attribution='&copy; Esri' url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
         </LayersControl.BaseLayer>
-
         <LayersControl.BaseLayer name="Arazi (Topo)">
-          <TileLayer
-            attribution='&copy; OpenTopoMap'
-            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-          />
+          <TileLayer attribution='&copy; OpenTopoMap' url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png" />
         </LayersControl.BaseLayer>
-        
         <LayersControl.BaseLayer name="Gece Modu">
-          <TileLayer
-            attribution='&copy; CartoDB'
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          />
+          <TileLayer attribution='&copy; CartoDB' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
         </LayersControl.BaseLayer>
       </LayersControl>
 
       <MapResizeFix />
       <MapEvents onMapClick={onMapClick} />
+      <FlyToSpot spot={selectedSpot ?? null} />
 
       {userLocation && isValidLatLng(userLocation.lat, userLocation.lng) && (
         <Marker position={[userLocation.lat, userLocation.lng]} icon={icons.blue}>
@@ -142,7 +128,6 @@ export default function Map({
         </Marker>
       )}
 
-      {/* Spots, Notes and Routes markers logic remains similar but with improved Popups */}
       {spots.filter(s => isValidLatLng(s?.lat, s?.lng)).map((spot) => (
         <Marker
           key={`spot-${spot.id}`}
@@ -152,27 +137,25 @@ export default function Map({
           <Popup className="premium-popup">
             <div style={{ minWidth: '200px', padding:'5px' }}>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px'}}>
-                <strong style={{fontSize: '1.1rem', color:'var(--text)'}}>{spot.title}</strong>
-                <span style={{ 
-                  fontSize:'0.7rem', 
-                  padding:'2px 8px', 
-                  borderRadius:'10px',
-                  background: spot.category === 'Sakin Köşe' ? 'rgba(45,90,39,0.1)' : 'rgba(255,140,66,0.1)',
-                  color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)',
+                <strong style={{fontSize: '1.1rem'}}>{spot.title}</strong>
+                <span style={{
+                  fontSize:'0.7rem', padding:'2px 8px', borderRadius:'10px',
+                  background: spot.category === 'Sakin Köşe' ? 'rgba(45,90,39,0.15)' : 'rgba(255,140,66,0.15)',
+                  color: spot.category === 'Sakin Köşe' ? '#2d5a27' : '#ff8c42',
                   fontWeight: 700
                 }}>{spot.category}</span>
               </div>
-              
-              {spot.image_url && <img src={spot.image_url} style={{width:'100%', height:'100px', objectFit:'cover', borderRadius:'8px', marginBottom:'8px'}} />}
-
+              {spot.image_url && (
+                <img src={spot.image_url} style={{width:'100%', height:'100px', objectFit:'cover', borderRadius:'8px', marginBottom:'8px'}} />
+              )}
               {spot.attributes && (
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                   {spot.attributes.water && <span title="Su">💧</span>}
                   {spot.attributes.electricity && <span title="Elektrik">⚡</span>}
                   {spot.attributes.wc && <span title="WC">🚽</span>}
+                  {spot.attributes.pet_friendly && <span title="Evcil Hayvan">🐾</span>}
                 </div>
               )}
-
               {spot.address && <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>📍 {spot.address}</div>}
             </div>
           </Popup>
@@ -183,7 +166,7 @@ export default function Map({
         <Marker key={`note-${note.id}`} position={[note.lat, note.lng]} icon={icons.orange}>
           <Popup className="premium-popup">
             <div style={{padding:'5px'}}>
-              <strong style={{color:'var(--sunset-orange)'}}>📌 Askıda Not</strong><br />
+              <strong style={{color:'#ff8c42'}}>📌 Askıda Not</strong><br />
               <p style={{margin:'8px 0', fontSize:'0.9rem', fontStyle:'italic'}}>"{note.note}"</p>
               <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>
                 — {note.profiles?.full_name || 'Gizli Karavancı'}
@@ -200,18 +183,11 @@ export default function Map({
           .map((c: any) => Array.isArray(c) && c.length >= 2 ? [c[1], c[0]] as [number, number] : null)
           .filter((p): p is [number, number] => p !== null && isValidLatLng(p[0], p[1]));
         if (positions.length < 2) return null;
-
         return (
           <Polyline
             key={`route-${route.id}`}
             positions={positions}
-            pathOptions={{ 
-              color: 'var(--sunset-orange)', 
-              weight: 6, 
-              opacity: 0.8, 
-              lineCap: 'round',
-              lineJoin: 'round'
-            }}
+            pathOptions={{ color: '#ff8c42', weight: 6, opacity: 0.8, lineCap: 'round', lineJoin: 'round' }}
           >
             <Popup className="premium-popup">
               <div style={{padding:'5px'}}>
@@ -220,7 +196,11 @@ export default function Map({
                   <span style={{opacity:0.6}}>Başlangıç:</span> {route.start_location_name}<br/>
                   <span style={{opacity:0.6}}>Varış:</span> {route.end_location_name}
                 </div>
-                {route.description && <p style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '8px', borderTop:'1px solid rgba(0,0,0,0.05)', paddingTop:'5px' }}>{route.description}</p>}
+                {route.description && (
+                  <p style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '8px', borderTop:'1px solid rgba(0,0,0,0.05)', paddingTop:'5px' }}>
+                    {route.description}
+                  </p>
+                )}
               </div>
             </Popup>
           </Polyline>
@@ -238,14 +218,9 @@ export default function Map({
         </Marker>
       )}
       {draftRoute?.start && draftRoute?.end && (
-        <Polyline 
-          positions={[draftRoute.start, draftRoute.end]} 
-          pathOptions={{ 
-            color: 'var(--forest-green)', 
-            weight: 5, 
-            dashArray: '10, 15', 
-            opacity: 0.8 
-          }} 
+        <Polyline
+          positions={[draftRoute.start, draftRoute.end]}
+          pathOptions={{ color: '#2d5a27', weight: 5, dashArray: '10, 15', opacity: 0.8 }}
         />
       )}
     </MapContainer>

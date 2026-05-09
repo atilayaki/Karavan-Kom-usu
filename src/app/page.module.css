@@ -114,6 +114,32 @@
   flex-wrap: wrap;
 }
 
+.tourBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding: 9px 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+  letter-spacing: 0.2px;
+}
+
+.tourBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
 /* Slider Dots */
 .sliderDots {
   position: absolute;
@@ -360,5 +386,6 @@
   .heroContent { padding: 0 16px; }
   .ctaGroup { flex-direction: column; align-items: stretch; gap: 10px; }
   .ctaGroup > * { width: 100%; justify-content: center; }
+  .tourBtn { width: 100%; justify-content: center; }
   .sliderDots { bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px); }
 }

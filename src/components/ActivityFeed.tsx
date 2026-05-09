@@ -12,9 +12,9 @@ export default function ActivityFeed() {
   useEffect(() => {
     fetchActivities();
     
-    // Subscribe to new activities
+    const channelId = `activities-${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel('public:activities')
+      .channel(channelId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, (payload) => {
         setActivities(prev => [payload.new as Activity, ...prev].slice(0, 10));
       })

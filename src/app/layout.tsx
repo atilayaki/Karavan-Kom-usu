@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import SidebarNav from "@/components/SidebarNav";
-import BottomNav from "@/components/BottomNav";
-import VerifyEmailBanner from "@/components/VerifyEmailBanner";
+import LayoutWrapper from "@/components/LayoutWrapper";
 import InstallPWA from "@/components/InstallPWA";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import TimeOfDayTheme from "@/components/TimeOfDayTheme";
@@ -61,13 +58,9 @@ export default function RootLayout({
           <div className="bg-shape bg-shape-1" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-2" aria-hidden="true"></div>
           <div className="bg-shape bg-shape-3" aria-hidden="true"></div>
-          <Navbar />
-          <SidebarNav />
-          <VerifyEmailBanner />
-          <main style={{ marginTop: 'calc(var(--nav-height) + env(safe-area-inset-top))', paddingBottom: 'calc(var(--bottom-nav-height) + env(safe-area-inset-bottom))', position: 'relative', zIndex: 1 }}>
+          <LayoutWrapper>
             {children}
-          </main>
-          <BottomNav />
+          </LayoutWrapper>
           <InstallPWA />
           <AmbientSound />
           <ServiceWorkerRegistration />

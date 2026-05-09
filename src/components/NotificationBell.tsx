@@ -24,6 +24,7 @@ export default function NotificationBell({ align = 'right' }: { align?: 'left' |
 
   useEffect(() => {
     let mounted = true;
+    let channel: any;
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!mounted || !user) return;
@@ -41,8 +42,8 @@ export default function NotificationBell({ align = 'right' }: { align?: 'left' |
           setUnread(data.filter(n => !n.is_read).length);
         });
 
-      const channel = supabase
-        .channel(`notifications:${user.id}`)
+      channel = supabase
+        .channel(`notifications:${user.id}-${Math.random().toString(36).substring(7)}`)
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
@@ -53,11 +54,12 @@ export default function NotificationBell({ align = 'right' }: { align?: 'left' |
           }
         )
         .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
     });
 
-    return () => { mounted = false; };
+    return () => { 
+      mounted = false; 
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {

@@ -99,6 +99,12 @@ export default function Home() {
               <IconCaravan size={18} /> Aramıza Katıl
             </Link>
           </div>
+          <button
+            className={styles.tourBtn}
+            onClick={() => window.dispatchEvent(new CustomEvent('karavan:show-tour'))}
+          >
+            🗺️ Platform Turu
+          </button>
         </div>
 
         {/* Slider Dots */}

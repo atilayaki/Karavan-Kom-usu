@@ -8,8 +8,8 @@ const NAV_CATEGORIES = [
   {
     label: 'Gezgin',
     items: [
-      { href: '/kesfet',  label: 'Keşfet & Rota', icon: '🗺️' },
       { href: '/manzara', label: 'Manzara',        icon: '📸' },
+      { href: '/kesfet',  label: 'Keşfet & Rota', icon: '🗺️' },
     ],
   },
   {
