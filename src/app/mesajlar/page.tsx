@@ -28,11 +28,14 @@ export default function MesajlarPage() {
   const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const presenceChannelRef = useRef<any>(null);
+  const inboxChannelRef = useRef<any>(null);
   const activeChatRef = useRef<any>(null);
+  const userRef = useRef<any>(null);
   activeChatRef.current = activeChat;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
+      userRef.current = user;
       setUser(user);
       if (user) {
         fetchConversations(user.id);
@@ -40,8 +43,18 @@ export default function MesajlarPage() {
         setupInbox(user.id);
       }
     });
+
+    const handleVisibility = () => {
+      if (!document.hidden && activeChatRef.current && userRef.current) {
+        fetchMessages(activeChatRef.current.id);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (presenceChannelRef.current) supabase.removeChannel(presenceChannelRef.current);
+      if (inboxChannelRef.current) supabase.removeChannel(inboxChannelRef.current);
     };
   }, []);
 
@@ -92,12 +105,15 @@ export default function MesajlarPage() {
       }, (payload) => {
         const msg = payload.new as any;
         if (activeChatRef.current && msg.sender_id === activeChatRef.current.id) {
-          setMessages(prev => [...prev, msg]);
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === msg.id);
+            return exists ? prev : [...prev, msg];
+          });
         }
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    inboxChannelRef.current = channel;
   };
 
   const fetchConversations = async (userId: string) => {
@@ -117,16 +133,15 @@ export default function MesajlarPage() {
   };
 
   const fetchMessages = async (friendId: string) => {
-    if (!user) return;
-    const { data, error } = await supabase
+    const uid = userRef.current?.id || user?.id;
+    if (!uid) return;
+    const { data } = await supabase
       .from('direct_messages')
       .select('*')
-      .or(`and(sender_id.eq.${user.id},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${user.id})`)
+      .or(`and(sender_id.eq.${uid},receiver_id.eq.${friendId}),and(sender_id.eq.${friendId},receiver_id.eq.${uid})`)
       .order('created_at', { ascending: true });
 
-    if (data) {
-      setMessages(data);
-    }
+    if (data) setMessages(data);
   };
 
   useEffect(() => {

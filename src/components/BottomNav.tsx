@@ -8,8 +8,8 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: 'Keşfet', path: '/kesfet', icon: '🗺️' },
     { name: 'Manzara', path: '/manzara', icon: '📸' },
+    { name: 'Mesajlar', path: '/mesajlar', icon: '💬' },
     { name: 'Telsiz', path: '/telsiz', icon: '📻' },
     { name: 'Pazar', path: '/pazaryeri', icon: '🛒' },
     { name: 'Günlük', path: '/gunluk', icon: '🚐' },
