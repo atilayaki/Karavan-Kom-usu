@@ -162,10 +162,7 @@
 .logoText {
   white-space: nowrap;
   display: inline-block;
-  background: linear-gradient(135deg, var(--forest-green), var(--sunset-orange));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--sunset-orange);
 }
 
 .logoImage {
