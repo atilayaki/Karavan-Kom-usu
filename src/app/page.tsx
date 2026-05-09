@@ -107,18 +107,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Slider Dots */}
-        <div className={styles.sliderDots}>
-          {HERO_IMAGES.map((_, index) => (
-            <button
-              key={index}
-              className={`${styles.dot} ${index === currentImageIndex ? styles.activeDot : ''}`}
-              onClick={() => setCurrentImageIndex(index)}
-              aria-label={`Görsel ${index + 1}`}
-            />
-          ))}
-        </div>
-
         {/* Scroll Indicator */}
         <div className={styles.scrollIndicator}>
           <div className={styles.scrollMouse}>
