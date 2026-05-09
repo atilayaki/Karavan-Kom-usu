@@ -8,6 +8,15 @@ import Image from 'next/image';
 import { IconChat, IconUser, IconSOS, IconMap } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 
+type PresenceStatus = 'online' | 'busy';
+
+function getStatus(presenceMap: Record<string, PresenceStatus>, userId: string) {
+  const s = presenceMap[userId];
+  if (s === 'online') return { label: 'Çevrimiçi', color: '#44b700' };
+  if (s === 'busy') return { label: 'Meşgul', color: '#f59e0b' };
+  return { label: 'Çevrimdışı', color: '#6b7280' };
+}
+
 export default function MesajlarPage() {
   const { showToast } = useToast();
   const [user, setUser] = useState<any>(null);
@@ -16,16 +25,60 @@ export default function MesajlarPage() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [presenceMap, setPresenceMap] = useState<Record<string, PresenceStatus>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const presenceChannelRef = useRef<any>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
         fetchConversations(user.id);
+        setupPresence(user.id);
       }
     });
+    return () => {
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current);
+      }
+    };
   }, []);
+
+  const setupPresence = (userId: string) => {
+    const channel = supabase.channel('online-users');
+
+    const trackStatus = (status: PresenceStatus) => {
+      channel.track({ user_id: userId, status, online_at: new Date().toISOString() });
+    };
+
+    const syncPresence = () => {
+      const state = channel.presenceState<{ user_id: string; status: PresenceStatus }>();
+      const map: Record<string, PresenceStatus> = {};
+      Object.values(state).forEach((presences: any[]) => {
+        presences.forEach((p) => {
+          if (p.user_id) map[p.user_id] = p.status;
+        });
+      });
+      setPresenceMap(map);
+    };
+
+    channel
+      .on('presence', { event: 'sync' }, syncPresence)
+      .on('presence', { event: 'join' }, syncPresence)
+      .on('presence', { event: 'leave' }, syncPresence)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          trackStatus(document.hidden ? 'busy' : 'online');
+        }
+      });
+
+    const handleVisibility = () => trackStatus(document.hidden ? 'busy' : 'online');
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    presenceChannelRef.current = channel;
+
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  };
 
   const fetchConversations = async (userId: string) => {
     setLoading(true);
@@ -121,25 +174,31 @@ export default function MesajlarPage() {
             ) : conversations.length === 0 ? (
               <div className={styles.empty}>Henüz arkadaşın yok.</div>
             ) : (
-              conversations.map(conv => (
-                <div 
-                  key={conv.id} 
-                  className={`${styles.convItem} ${activeChat?.id === conv.id ? styles.activeConv : ''}`}
-                  onClick={() => setActiveChat(conv)}
-                >
-                  <div className={styles.avatar}>
-                    {conv.avatar_url ? (
-                      <Image src={conv.avatar_url} fill alt={conv.full_name} style={{objectFit: 'cover', borderRadius: '50%'}} />
-                    ) : (
-                      conv.full_name?.charAt(0)
-                    )}
+              conversations.map(conv => {
+                const status = getStatus(presenceMap, conv.id);
+                return (
+                  <div
+                    key={conv.id}
+                    className={`${styles.convItem} ${activeChat?.id === conv.id ? styles.activeConv : ''}`}
+                    onClick={() => setActiveChat(conv)}
+                  >
+                    <div className={styles.avatarWrapper}>
+                      <div className={styles.avatar}>
+                        {conv.avatar_url ? (
+                          <Image src={conv.avatar_url} fill alt={conv.full_name} style={{objectFit: 'cover', borderRadius: '50%'}} />
+                        ) : (
+                          conv.full_name?.charAt(0)
+                        )}
+                      </div>
+                      <span className={styles.statusDot} style={{background: status.color}} />
+                    </div>
+                    <div className={styles.convInfo}>
+                      <span className={styles.name}>{conv.full_name}</span>
+                      <span className={styles.type} style={{color: status.color}}>{status.label}</span>
+                    </div>
                   </div>
-                  <div className={styles.convInfo}>
-                    <span className={styles.name}>{conv.full_name}</span>
-                    <span className={styles.type}>{conv.caravan_type || 'Gezgin'}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </aside>
@@ -167,7 +226,9 @@ export default function MesajlarPage() {
                   </div>
                   <div className={styles.headerInfo}>
                     <h4>{activeChat.full_name}</h4>
-                    <span>Çevrimiçi</span>
+                    <span style={{color: getStatus(presenceMap, activeChat.id).color}}>
+                      {getStatus(presenceMap, activeChat.id).label}
+                    </span>
                   </div>
                 </div>
                 <Link href={`/profil/${activeChat.id}`} className={styles.viewProfile}>Profili Gör</Link>
