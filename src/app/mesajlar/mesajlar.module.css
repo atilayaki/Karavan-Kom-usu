@@ -290,7 +290,7 @@
 @media (max-width: 900px) {
   .container {
     padding: 0;
-    height: calc(var(--visual-vh, 100dvh) - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top));
+    height: calc(100dvh - var(--nav-height) - var(--bottom-nav-height) - env(safe-area-inset-top));
     width: 100%;
     max-width: 100%;
   }
@@ -299,15 +299,36 @@
   .dmWrapper[data-mobile-view='list'] .sidebar { display: flex; }
   .dmWrapper[data-mobile-view='list'] .chatArea { display: none; }
 
-  /* When a chat is open, show only the chat */
+  /* When a chat is open, show only the chat as a true fullscreen overlay
+     above navbar/bottomnav. Height is set in JS from visualViewport so the
+     input always sits directly above the keyboard. */
+  .dmWrapper[data-mobile-view='chat'] {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    height: 100dvh;
+    border-radius: 0;
+    background: var(--background, #0f1a0f);
+    grid-template-columns: 1fr;
+    overflow: hidden;
+    transform-origin: top left;
+    will-change: transform, height;
+  }
   .dmWrapper[data-mobile-view='chat'] .sidebar { display: none; }
-  .dmWrapper[data-mobile-view='chat'] .chatArea { display: flex; }
+  .dmWrapper[data-mobile-view='chat'] .chatArea {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+  }
 
   .backBtn { display: inline-flex; }
-  .chatHeader { padding: 12px 14px; }
-  .messages { padding: 16px; }
-  .inputArea { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); gap: 10px; }
-  .inputArea input { padding: 12px 16px; }
+  .chatHeader { padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); }
+  .messages { padding: 16px; min-height: 0; }
+  .inputArea {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+  .inputArea input { padding: 12px 16px; font-size: 16px; }
   .sidebarHeader { padding: 16px; }
   .sidebarHeader h3 { font-size: 1.2rem; }
   .conversations { padding: 6px; }

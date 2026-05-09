@@ -31,6 +31,7 @@ export default function MesajlarPage() {
   const inboxChannelRef = useRef<any>(null);
   const activeChatRef = useRef<any>(null);
   const userRef = useRef<any>(null);
+  const dmWrapperRef = useRef<HTMLDivElement>(null);
   activeChatRef.current = activeChat;
 
   useEffect(() => {
@@ -51,21 +52,54 @@ export default function MesajlarPage() {
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
-    const updateVH = () => {
-      const vh = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty('--visual-vh', `${vh}px`);
-    };
-    updateVH();
-    window.visualViewport?.addEventListener('resize', updateVH);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.visualViewport?.removeEventListener('resize', updateVH);
-      document.documentElement.style.removeProperty('--visual-vh');
       if (presenceChannelRef.current) supabase.removeChannel(presenceChannelRef.current);
       if (inboxChannelRef.current) supabase.removeChannel(inboxChannelRef.current);
     };
   }, []);
+
+  // Mobile chat fullscreen: lock the page and size the chat to the visible viewport
+  // so the input always sits right above the keyboard (Instagram DM behaviour).
+  useEffect(() => {
+    const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+
+    const update = () => {
+      const el = dmWrapperRef.current;
+      if (!el) return;
+      const fullscreen = isMobile() && !!activeChatRef.current;
+      if (fullscreen) {
+        const vv = window.visualViewport;
+        const h = vv?.height ?? window.innerHeight;
+        const top = vv?.offsetTop ?? 0;
+        el.style.height = `${h}px`;
+        el.style.transform = top ? `translateY(${top}px)` : '';
+        document.body.classList.add('mesajlar-fullscreen');
+      } else {
+        el.style.height = '';
+        el.style.transform = '';
+        document.body.classList.remove('mesajlar-fullscreen');
+      }
+    };
+
+    update();
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    window.addEventListener('orientationchange', update);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+      document.body.classList.remove('mesajlar-fullscreen');
+      if (dmWrapperRef.current) {
+        dmWrapperRef.current.style.height = '';
+        dmWrapperRef.current.style.transform = '';
+      }
+    };
+  }, [activeChat]);
 
   const setupPresence = (userId: string) => {
     const channel = supabase.channel('online-users');
@@ -202,6 +236,7 @@ export default function MesajlarPage() {
       <div className={styles.glow} />
       
       <div
+        ref={dmWrapperRef}
         className={styles.dmWrapper + " glass-card"}
         data-mobile-view={activeChat ? 'chat' : 'list'}
       >
