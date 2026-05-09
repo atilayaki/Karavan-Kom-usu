@@ -205,6 +205,13 @@
   transform: scale(1.05);
 }
 
+.profileAvatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 @media (max-width: 768px) {
   .profileBtn { display: none; }
 }

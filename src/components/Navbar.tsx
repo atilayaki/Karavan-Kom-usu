@@ -71,14 +71,29 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [open]);
 
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [user, setUser] = useState<{ id: string; avatarUrl?: string | null } | null>(null);
+
+  const fetchAvatar = async (userId: string) => {
+    const { data } = await supabase.from('profiles').select('avatar_url').eq('id', userId).single();
+    return data?.avatar_url ?? null;
+  };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user ? { id: user.id } : null);
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        const avatarUrl = await fetchAvatar(user.id);
+        setUser({ id: user.id, avatarUrl });
+      } else {
+        setUser(null);
+      }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
-      setUser(session?.user ? { id: session.user.id } : null);
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, session) => {
+      if (session?.user) {
+        const avatarUrl = await fetchAvatar(session.user.id);
+        setUser({ id: session.user.id, avatarUrl });
+      } else {
+        setUser(null);
+      }
     });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
@@ -184,7 +199,11 @@ export default function Navbar() {
           <div className={styles.actions}>
             {/* Mobile: sağ üst */}
             <div className={styles.bellMobile}><NotificationBell align="right" /></div>
-            <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">👤</Link>
+            <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">
+              {user?.avatarUrl
+                ? <img src={user.avatarUrl} alt="Profil" className={styles.profileAvatar} />
+                : '👤'}
+            </Link>
             <ThemeToggle />
           </div>
         </div>
