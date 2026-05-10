@@ -117,17 +117,17 @@
   .item:hover { background: rgba(255,255,255,0.03); }
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: transparent;
+.typeIcon {
+  font-size: 1.1rem;
+  line-height: 1;
   flex-shrink: 0;
-  margin-top: 6px;
+  margin-top: 1px;
+  width: 22px;
+  text-align: center;
 }
 
-.unread .dot {
-  background: var(--sunset-orange);
+.unread .typeIcon {
+  filter: drop-shadow(0 0 4px rgba(255, 140, 66, 0.5));
 }
 
 .body {

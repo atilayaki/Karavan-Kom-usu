@@ -15,6 +15,13 @@ interface Notification {
   created_at: string;
 }
 
+const TYPE_ICON: Record<string, string> = {
+  like: '❤️',
+  comment: '💬',
+  follow: '👤',
+  message: '✉️',
+};
+
 export default function NotificationBell({ align = 'right' }: { align?: 'left' | 'right' }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
@@ -122,7 +129,7 @@ export default function NotificationBell({ align = 'right' }: { align?: 'left' |
               {items.map(n => {
                 const content = (
                   <div className={`${styles.item} ${!n.is_read ? styles.unread : ''}`}>
-                    <div className={styles.dot}></div>
+                    <div className={styles.typeIcon}>{TYPE_ICON[n.type] ?? '🔔'}</div>
                     <div className={styles.body}>
                       <p>{n.message}</p>
                       <small>{formatTime(n.created_at)}</small>
