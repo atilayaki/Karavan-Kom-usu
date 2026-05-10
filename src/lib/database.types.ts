@@ -96,6 +96,7 @@ export interface Post {
   caption: string;
   location_name: string | null;
   image_url: string | null;
+  instagram_url: string | null;
   likes_count: number;
   created_at: string;
   profiles?: Pick<Profile, 'full_name'>;

@@ -17,6 +17,11 @@ import ImageCropper from '@/components/ImageCropper';
 const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv|stories)\/[\w.-]+/i;
 const isInstagramUrl = (url?: string | null): boolean => !!url && INSTAGRAM_URL_RE.test(url);
 
+const getIgEmbedUrl = (url: string): string | null => {
+  const m = url.match(/instagram\.com\/(p|reel|tv)\/([\w-]+)/);
+  return m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/captioned/` : null;
+};
+
 export default function ManzaraPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
@@ -200,8 +205,11 @@ export default function ManzaraPage() {
 
     try {
       let resolvedUrl: string | null = null;
+      let igOriginalUrl: string | null = null;
+
       if (hasIG) {
         resolvedUrl = igUrl;
+        igOriginalUrl = igUrl;
       } else if (imageFile) {
         showToast("Görsel yükleniyor...", "info");
         resolvedUrl = await uploadImage(imageFile);
@@ -217,6 +225,7 @@ export default function ManzaraPage() {
           caption: newPost.caption,
           location_name: newPost.location_name,
           image_url: resolvedUrl,
+          instagram_url: igOriginalUrl,
         }
       ]);
 
@@ -421,26 +430,31 @@ export default function ManzaraPage() {
 
                 <p className={styles.postText}>{post.caption}</p>
                 
-                {post.image_url && (
-                  isInstagramUrl(post.image_url) ? (
-                    <a
-                      href={post.image_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.igCard}
-                    >
+                {/* Instagram embed iframe */}
+                {(post.instagram_url || isInstagramUrl(post.image_url)) && (() => {
+                  const igUrl = post.instagram_url || post.image_url!;
+                  const embedUrl = getIgEmbedUrl(igUrl);
+                  return embedUrl ? (
+                    <div className={styles.igEmbedWrap}>
+                      <iframe
+                        src={embedUrl}
+                        className={styles.igEmbed}
+                        scrolling="no"
+                        allowTransparency
+                        allow="encrypted-media"
+                        title="Instagram gönderisi"
+                      />
+                    </div>
+                  ) : (
+                    <a href={igUrl} target="_blank" rel="noopener noreferrer" className={styles.igCard}>
                       <div className={styles.igCardIcon}>
-                        <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                        <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
                           <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#igGrad)" strokeWidth="2"/>
                           <circle cx="12" cy="12" r="4.5" stroke="url(#igGrad)" strokeWidth="2"/>
                           <circle cx="17.5" cy="6.5" r="1" fill="url(#igGrad)"/>
                           <defs>
                             <linearGradient id="igGrad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
-                              <stop stopColor="#f09433"/>
-                              <stop offset="0.25" stopColor="#e6683c"/>
-                              <stop offset="0.5" stopColor="#dc2743"/>
-                              <stop offset="0.75" stopColor="#cc2366"/>
-                              <stop offset="1" stopColor="#bc1888"/>
+                              <stop stopColor="#f09433"/><stop offset="0.5" stopColor="#dc2743"/><stop offset="1" stopColor="#bc1888"/>
                             </linearGradient>
                           </defs>
                         </svg>
@@ -450,20 +464,19 @@ export default function ManzaraPage() {
                         <span className={styles.igCardSub}>Görmek için tıkla →</span>
                       </div>
                     </a>
-                  ) : (
-                    <div className={styles.imageContainer} onClick={() => {
-                      const visiblePosts = posts.filter(p => p.image_url && !isInstagramUrl(p.image_url));
-                      const idx = visiblePosts.findIndex(p => p.id === post.id);
-                      setStoryStartIndex(Math.max(idx, 0));
-                      setStoryOpen(true);
-                    }} style={{ cursor: 'pointer' }}>
-                      <img
-                        src={post.image_url}
-                        alt="Manzara"
-                        className={styles.postImage}
-                      />
-                    </div>
-                  )
+                  );
+                })()}
+
+                {/* Direct photo upload */}
+                {post.image_url && !isInstagramUrl(post.image_url) && !post.instagram_url && (
+                  <div className={styles.imageContainer} onClick={() => {
+                    const visiblePosts = posts.filter(p => p.image_url && !isInstagramUrl(p.image_url) && !p.instagram_url);
+                    const idx = visiblePosts.findIndex(p => p.id === post.id);
+                    setStoryStartIndex(Math.max(idx, 0));
+                    setStoryOpen(true);
+                  }} style={{ cursor: 'pointer' }}>
+                    <img src={post.image_url} alt="Manzara" className={styles.postImage} />
+                  </div>
                 )}
 
                 <div className={styles.postFooter}>
