@@ -196,37 +196,41 @@ export default function ManzaraPage() {
 
     setIsSubmitting(true);
 
-    let resolvedUrl: string | null = null;
-    if (hasIG) {
-      resolvedUrl = igUrl;
-    } else if (imageFile) {
-      resolvedUrl = await uploadImage(imageFile);
-      if (!resolvedUrl) {
-        showToast("Görsel yüklenemedi.", "error");
-        setIsSubmitting(false);
-        return;
+    try {
+      let resolvedUrl: string | null = null;
+      if (hasIG) {
+        resolvedUrl = igUrl;
+      } else if (imageFile) {
+        resolvedUrl = await uploadImage(imageFile);
+        if (!resolvedUrl) {
+          showToast("Görsel yüklenemedi. Lütfen tekrar deneyin.", "error");
+          return;
+        }
       }
-    }
 
-    const { error } = await supabase.from('posts').insert([
-      {
-        user_id: user.id,
-        caption: newPost.caption,
-        location_name: newPost.location_name,
-        image_url: resolvedUrl,
+      const { error } = await supabase.from('posts').insert([
+        {
+          user_id: user.id,
+          caption: newPost.caption,
+          location_name: newPost.location_name,
+          image_url: resolvedUrl,
+        }
+      ]);
+
+      if (!error) {
+        showToast("Manzaranız başarıyla paylaşıldı!", "success");
+        setIsModalOpen(false);
+        setNewPost({ caption: '', location_name: '', instagram_url: '' });
+        setImageFile(null);
+        fetchPosts();
+      } else {
+        showToast("Hata: " + error.message, "error");
       }
-    ]);
-
-    if (!error) {
-      showToast("Manzaranız başarıyla paylaşıldı!", "success");
-      setIsModalOpen(false);
-      setNewPost({ caption: '', location_name: '', instagram_url: '' });
-      setImageFile(null);
-      fetchPosts();
-    } else {
-      showToast("Hata: " + error.message, "error");
+    } catch (err: any) {
+      showToast(err?.message || "Beklenmedik bir hata oluştu.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const handleAddComment = async (e: React.FormEvent, postId: number) => {
