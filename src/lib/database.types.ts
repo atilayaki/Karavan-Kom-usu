@@ -172,11 +172,11 @@ export interface Friendship {
 }
 
 export interface DirectMessage {
-  id: number;
+  id: string;
   sender_id: string;
   receiver_id: string;
   content: string;
-  is_read?: boolean;
+  read_at: string | null;
   created_at: string;
   profiles?: Pick<Profile, 'full_name' | 'avatar_url'> | null;
 }

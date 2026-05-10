@@ -3,16 +3,9 @@
 import { useEffect, useState, useRef, use } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import type { DirectMessage as Message } from '@/lib/database.types';
 import styles from './chat.module.css';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  read_at: string | null;
-}
 
 interface Partner {
   id: string;
@@ -23,6 +16,7 @@ interface Partner {
 
 export default function ChatPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: partnerId } = use(params);
+  useAuth({ requireAuth: true });
   const [myId, setMyId] = useState<string | null>(null);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);

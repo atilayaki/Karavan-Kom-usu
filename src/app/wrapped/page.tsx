@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './wrapped.module.css';
 
 interface WrappedStats {
@@ -34,6 +35,7 @@ type Slide = typeof SLIDES[number];
 const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
 export default function WrappedPage() {
+  useAuth({ requireAuth: true });
   const [stats, setStats] = useState<WrappedStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [slide, setSlide] = useState(0);

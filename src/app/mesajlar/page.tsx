@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { IconChat } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
+import { useAuth } from '@/hooks/useAuth';
+import type { DirectMessage } from '@/lib/database.types';
 
 type PresenceStatus = 'online' | 'busy';
 
@@ -19,6 +21,7 @@ function getStatus(presenceMap: Record<string, PresenceStatus>, userId: string) 
 
 export default function MesajlarPage() {
   const { showToast } = useToast();
+  useAuth({ requireAuth: true });
   const [user, setUser] = useState<any>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeChat, setActiveChat] = useState<any>(null);
@@ -147,7 +150,7 @@ export default function MesajlarPage() {
         table: 'direct_messages',
         filter: `receiver_id=eq.${userId}`,
       }, (payload) => {
-        const msg = payload.new as any;
+        const msg = payload.new as DirectMessage;
         if (activeChatRef.current && msg.sender_id === activeChatRef.current.id) {
           setMessages(prev => {
             const exists = prev.some(m => m.id === msg.id);

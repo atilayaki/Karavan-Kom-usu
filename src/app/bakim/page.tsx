@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
 import styles from './bakim.module.css';
 
 const CATEGORIES = ['Yağ & Filtre', 'Lastik', 'Fren', 'Akü', 'Solar Panel', 'Su Tankı', 'Isıtma', 'Elektrik', 'Motor', 'Genel'];
@@ -29,6 +30,7 @@ const EMPTY: Omit<Log, 'id'> = {
 };
 
 export default function BakimPage() {
+  useAuth({ requireAuth: true });
   const [userId, setUserId] = useState<string | null>(null);
   const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
