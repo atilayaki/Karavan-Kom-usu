@@ -29,10 +29,11 @@ const NAV_CATEGORIES = [
   {
     label: 'Araçlar',
     items: [
-      { href: '/pazaryeri', label: 'Pazaryeri',     icon: '🛒' },
-      { href: '/bakim',     label: 'Bakım',         icon: '🔧' },
-      { href: '/rehber',    label: 'Rehber',        icon: '📖' },
-      { href: '/wrapped',   label: 'Yıl Özeti',    icon: '🏕️' },
+      { href: '/pazaryeri',  label: 'Pazaryeri',  icon: '🛒' },
+      { href: '/bakim',      label: 'Bakım',      icon: '🔧' },
+      { href: '/rehber',     label: 'Rehber',     icon: '📖' },
+      { href: '/wrapped',    label: 'Yıl Özeti',  icon: '🏕️' },
+      { href: '/hakkimizda', label: 'Hakkımızda', icon: '🧭' },
     ],
   },
 ];
@@ -121,7 +122,10 @@ export default function Navbar() {
           {NAV_CATEGORIES.map((cat, catIdx) => (
             <div key={cat.label} className={styles.netflixRow}>
               <span className={styles.netflixRowLabel}>{cat.label}</span>
-              <div className={styles.netflixScroll}>
+              <div
+                className={styles.netflixScroll}
+                style={{ gridTemplateColumns: `repeat(${cat.items.length <= 4 ? cat.items.length : 5}, 1fr)` }}
+              >
                 {cat.items.map(item => (
                   <Link
                     key={item.href}

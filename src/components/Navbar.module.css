@@ -336,18 +336,15 @@
 }
 
 .netflixScroll {
-  display: flex;
-  overflow-x: auto;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   padding: 0 16px 6px;
-  scrollbar-width: none;
 }
-.netflixScroll::-webkit-scrollbar { display: none; }
 
 .netflixCard {
-  flex-shrink: 0;
-  width: 72px;
-  height: 82px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
