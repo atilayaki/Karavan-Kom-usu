@@ -13,89 +13,83 @@ export default function OGImage() {
           width: '1200px',
           height: '630px',
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #0c1a0c 0%, #1a2e1a 50%, #0d1a0d 100%)',
+          background: '#0c1a0c',
           position: 'relative',
           overflow: 'hidden',
+          gap: '64px',
+          padding: '0 80px',
         }}
       >
-        {/* Background decoration */}
-        <div
-          style={{
-            position: 'absolute',
-            top: '-100px',
-            right: '-100px',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,140,66,0.15) 0%, transparent 70%)',
-            display: 'flex',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-80px',
-            left: '-80px',
-            width: '350px',
-            height: '350px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(45,90,39,0.3) 0%, transparent 70%)',
-            display: 'flex',
-          }}
-        />
+        {/* Glow blobs */}
+        <div style={{
+          position: 'absolute', top: '-120px', right: '-80px',
+          width: '500px', height: '500px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,140,66,0.2) 0%, transparent 65%)',
+          display: 'flex',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-100px', left: '-60px',
+          width: '420px', height: '420px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(45,90,39,0.35) 0%, transparent 65%)',
+          display: 'flex',
+        }} />
 
         {/* Logo */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://karavankomsusu.com/logo.png"
-          width={120}
-          height={120}
-          style={{ borderRadius: '16px', marginBottom: '24px' }}
+          width={220}
+          height={220}
+          style={{
+            borderRadius: '32px',
+            flexShrink: 0,
+            boxShadow: '0 0 60px rgba(255,140,66,0.25)',
+          }}
           alt="logo"
         />
 
-        {/* Brand name */}
-        <div
-          style={{
-            fontSize: '56px',
+        {/* Text block */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{
+            fontSize: '68px',
             fontWeight: 800,
             color: '#ff8c42',
-            letterSpacing: '-1px',
-            marginBottom: '12px',
+            letterSpacing: '-1.5px',
+            lineHeight: 1.1,
             display: 'flex',
-          }}
-        >
-          Karavan Komşusu
-        </div>
+          }}>
+            Karavan Komşusu
+          </div>
 
-        {/* Tagline */}
-        <div
-          style={{
-            fontSize: '26px',
-            color: 'rgba(232,245,232,0.75)',
+          <div style={{
+            fontSize: '28px',
+            color: 'rgba(232,245,232,0.8)',
             fontWeight: 500,
             display: 'flex',
-          }}
-        >
-          Yolun Tadını Birlikte Çıkaralım 🚐
-        </div>
+          }}>
+            Yolun Tadını Birlikte Çıkaralım 🚐
+          </div>
 
-        {/* URL pill */}
-        <div
-          style={{
-            marginTop: '32px',
-            padding: '8px 24px',
-            borderRadius: '999px',
-            border: '1px solid rgba(255,140,66,0.4)',
-            color: 'rgba(255,140,66,0.8)',
-            fontSize: '18px',
+          <div style={{
+            marginTop: '8px',
             display: 'flex',
-          }}
-        >
-          karavankomsusu.com
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <div style={{
+              padding: '6px 20px',
+              borderRadius: '999px',
+              border: '1.5px solid rgba(255,140,66,0.5)',
+              color: 'rgba(255,140,66,0.9)',
+              fontSize: '20px',
+              display: 'flex',
+            }}>
+              karavankomsusu.com
+            </div>
+          </div>
         </div>
       </div>
     ),
