@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -42,6 +42,8 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
   const [msgText, setMsgText] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef(0);
 
   useEffect(() => {
     let mounted = true;
@@ -167,6 +169,20 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
   if (!item) return null;
 
   const isOwner = user?.id === item.user_id;
+  const carouselImages = (item.image_urls && item.image_urls.length > 0)
+    ? item.image_urls
+    : (item.image_url ? [item.image_url] : []);
+
+  const navigate = (dir: number) => {
+    setCurrentImageIndex(i => (i + dir + carouselImages.length) % carouselImages.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (diff > 50) navigate(1);
+    else if (diff < -50) navigate(-1);
+  };
   const createdDate = new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   const sellerSince = item.profiles?.created_at
     ? new Date(item.profiles.created_at).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
@@ -178,8 +194,30 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
 
       <div className={styles.layout}>
         <div className={styles.imageSection + ' glass-card'}>
-          {item.image_url ? (
-            <img src={item.image_url} alt={item.title} />
+          {carouselImages.length > 0 ? (
+            <div
+              className={styles.carousel}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              <img src={carouselImages[currentImageIndex]} alt={item.title} />
+              {carouselImages.length > 1 && (
+                <>
+                  <button className={`${styles.carouselBtn} ${styles.carouselPrev}`} onClick={() => navigate(-1)}>&#8249;</button>
+                  <button className={`${styles.carouselBtn} ${styles.carouselNext}`} onClick={() => navigate(1)}>&#8250;</button>
+                  <div className={styles.carouselDots}>
+                    {carouselImages.map((_, i) => (
+                      <button
+                        key={i}
+                        className={`${styles.dot} ${i === currentImageIndex ? styles.dotActive : ''}`}
+                        onClick={() => setCurrentImageIndex(i)}
+                      />
+                    ))}
+                  </div>
+                  <div className={styles.carouselCounter}>{currentImageIndex + 1} / {carouselImages.length}</div>
+                </>
+              )}
+            </div>
           ) : (
             <div className={styles.imagePlaceholder}>
               <span>📦</span>

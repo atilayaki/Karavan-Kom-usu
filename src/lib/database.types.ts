@@ -129,6 +129,7 @@ export interface MarketplaceItem {
   category: string;
   price: number;
   image_url: string | null;
+  image_urls: string[] | null;
   location_name: string | null;
   created_at: string;
   profiles?: Pick<Profile, 'full_name'>;

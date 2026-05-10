@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './pazaryeri.module.css';
 import Link from 'next/link';
@@ -26,14 +26,32 @@ export default function PazaryeriPage() {
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [newItem, setNewItem] = useState({ 
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newItem, setNewItem] = useState({
     title: '', 
     description: '', 
     category: 'Elektronik', 
     price: '', 
     location_name: '' 
   });
+
+  useEffect(() => {
+    const urls = imageFiles.map(f => URL.createObjectURL(f));
+    setImagePreviews(urls);
+    return () => urls.forEach(u => URL.revokeObjectURL(u));
+  }, [imageFiles]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newFiles = Array.from(e.target.files || []);
+    setImageFiles(prev => [...prev, ...newFiles].slice(0, 6));
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const categories = ['Tümü', 'Enerji & Elektrik', 'Su & Tesisat', 'Isıtma & Soğutma', 'Dış Donanım', 'Mobilya & İç Mekan', 'Elektronik', 'İç Donanım'];
 
@@ -114,16 +132,19 @@ export default function PazaryeriPage() {
     setIsSubmitting(true);
 
     try {
-      let finalImageUrl = 'https://images.unsplash.com/photo-1582214695027-e4c1f60ce3cb?q=80&w=400&auto=format&fit=crop';
+      const defaultImage = 'https://images.unsplash.com/photo-1582214695027-e4c1f60ce3cb?q=80&w=400&auto=format&fit=crop';
+      const uploadedUrls: string[] = [];
 
-      if (imageFile) {
-        const uploadedUrl = await uploadImage(imageFile);
-        if (uploadedUrl) {
-          finalImageUrl = uploadedUrl;
-        } else {
-          showToast("Görsel yüklenemedi, varsayılan görsel kullanılacak.", "info");
-        }
+      for (const file of imageFiles) {
+        const url = await uploadImage(file);
+        if (url) uploadedUrls.push(url);
       }
+
+      if (imageFiles.length > 0 && uploadedUrls.length === 0) {
+        showToast("Görseller yüklenemedi, varsayılan görsel kullanılacak.", "info");
+      }
+
+      const allImages = uploadedUrls.length > 0 ? uploadedUrls : [defaultImage];
 
       const { error } = await supabase.from('marketplace_items').insert([
         {
@@ -132,7 +153,8 @@ export default function PazaryeriPage() {
           description: newItem.description,
           category: newItem.category,
           price: parseFloat(newItem.price),
-          image_url: finalImageUrl,
+          image_url: allImages[0],
+          image_urls: allImages,
           location_name: newItem.location_name
         }
       ]);
@@ -140,7 +162,7 @@ export default function PazaryeriPage() {
       if (!error) {
         setIsModalOpen(false);
         setNewItem({ title: '', description: '', category: 'Elektronik', price: '', location_name: '' });
-        setImageFile(null);
+        setImageFiles([]);
         showToast("İlan başarıyla yayınlandı!", "success");
         fetchProducts();
       } else {
@@ -229,7 +251,12 @@ export default function PazaryeriPage() {
                   {product.image_url && (
                     <img src={product.image_url} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
-                  <button 
+                  {(product.image_urls?.length ?? 0) > 1 && (
+                    <div className={styles.photoCount}>
+                      {product.image_urls!.length} foto
+                    </div>
+                  )}
+                  <button
                     className={`${styles.bookmarkBtn} ${bookmarks.has(product.id) ? styles.bookmarked : ''}`}
                     onClick={(e) => toggleBookmark(e, product.id)}
                   >
@@ -311,15 +338,29 @@ export default function PazaryeriPage() {
               </div>
 
               <div className={styles.inputGroup}>
-                <label>Ürün Görseli</label>
-                <div className={styles.fileInputWrapper}>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
-                  />
-                  <span>{imageFile ? imageFile.name : 'Dosya seçin veya sürükleyin'}</span>
-                </div>
+                <label>Ürün Görselleri <span style={{ fontWeight: 400, opacity: 0.5 }}>({imageFiles.length}/6)</span></label>
+                {imagePreviews.length > 0 && (
+                  <div className={styles.imageThumbs}>
+                    {imagePreviews.map((src, i) => (
+                      <div key={i} className={styles.imageThumb}>
+                        <img src={src} alt="" />
+                        <button type="button" className={styles.thumbRemove} onClick={() => removeImage(i)}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {imageFiles.length < 6 && (
+                  <div className={styles.fileInputWrapper}>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                    />
+                    <span>{imageFiles.length === 0 ? 'Fotoğraf seçin veya sürükleyin' : '+ Daha fazla ekle'}</span>
+                  </div>
+                )}
               </div>
 
               <div className={styles.inputGroup}>
