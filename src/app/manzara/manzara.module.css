@@ -366,7 +366,7 @@
   .imageContainer { width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; }
   .igCard { margin: 0 -16px; padding: 10px 16px; }
   .igEmbedWrap { margin: 12px -16px 4px; }
-  .modalContent { padding: 24px; max-height: calc(100dvh - 60px); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .modalContent { padding: 24px; max-height: calc(100dvh - 60px); overflow-y: auto !important; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
   .modalForm { gap: 14px; }
   .commentForm input { font-size: 16px; }
 }
@@ -431,8 +431,10 @@
   .modalContent {
     padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
     border-radius: 20px 20px 0 0;
-    max-height: 92dvh;
-    overflow-y: auto;
+    height: 92dvh;
+    overflow-y: auto !important;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 }
