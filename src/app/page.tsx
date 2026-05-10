@@ -211,17 +211,6 @@ export default function Home() {
           <ActivityFeed />
         </div>
 
-        {/* ─── CTA Banner ─── */}
-        <section className={`${styles.ctaBanner} glass-card reveal`}>
-          <div className={styles.ctaBannerContent}>
-            <span className="font-accent" style={{ fontSize: '1.5rem', color: 'var(--sunset-orange)' }}>Hadi başlayalım!</span>
-            <h2>Karavancılar Seni Bekliyor</h2>
-            <p>Türkiye&apos;nin dört bir yanında binlerce komşun var. Kayıt ol, profilini oluştur ve yolculuğa başla.</p>
-            <Link href="/gunluk" className="btn-primary" style={{ fontSize: '1.1rem', padding: '16px 36px' }}>
-              Hemen Ücretsiz Katıl
-            </Link>
-          </div>
-        </section>
       </div>
     </div>
   );
