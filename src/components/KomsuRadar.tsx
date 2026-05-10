@@ -18,19 +18,33 @@ export default function KomsuRadar() {
   const [users, setUsers] = useState<RadarUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    supabase
+  const fetchUsers = async (mounted: boolean) => {
+    const { data } = await supabase
       .from('profiles')
       .select('id, full_name, username, avatar_url, xp, caravan_type')
       .order('updated_at', { ascending: false })
-      .limit(8)
-      .then(({ data }) => {
-        if (!mounted) return;
-        setUsers(data || []);
-        setLoading(false);
-      });
-    return () => { mounted = false; };
+      .limit(8);
+    if (!mounted) return;
+    setUsers(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    fetchUsers(mounted);
+
+    const channel = supabase
+      .channel('komsu-radar')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchUsers(mounted);
+      })
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading || users.length === 0) return null;
