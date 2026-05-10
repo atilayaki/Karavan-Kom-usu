@@ -121,7 +121,7 @@ export default function ManzaraPage() {
       } else {
         let query = supabase.from('posts').select(`
           *,
-          profiles(full_name),
+          profiles(full_name, avatar_url),
           comments(id, comment, created_at, user_id, profiles(full_name))
         `);
         if (filter === 'Popüler') {
@@ -391,7 +391,9 @@ export default function ManzaraPage() {
                 <div className={styles.postHeader}>
                   <Link href={`/profil/${post.user_id}`} className={styles.userInfo}>
                     <div className={styles.avatarWrap}>
-                      <div className={styles.avatar}>{(post.profiles?.full_name || 'G').charAt(0)}</div>
+                      {(post.profiles as any)?.avatar_url
+                        ? <img src={(post.profiles as any).avatar_url} alt={(post.profiles?.full_name || 'Profil')} className={styles.avatarImg} />
+                        : <div className={styles.avatar}>{(post.profiles?.full_name || 'G').charAt(0).toUpperCase()}</div>}
                     </div>
                     <div>
                       <h4 style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
