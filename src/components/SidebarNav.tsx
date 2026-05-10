@@ -27,7 +27,8 @@ const NAV_CATEGORIES = [
       { href: '/pazaryeri', label: 'Pazaryeri', icon: '🛒' },
       { href: '/bakim',     label: 'Bakım',     icon: '🔧' },
       { href: '/rehber',    label: 'Rehber',    icon: '📖' },
-      { href: '/wrapped',   label: 'Yıl Özeti', icon: '🏕️' },
+      { href: '/wrapped',      label: 'Yıl Özeti',   icon: '🏕️' },
+      { href: '/hakkimizda',   label: 'Hakkımızda',  icon: '🧭' },
     ],
   },
 ];
