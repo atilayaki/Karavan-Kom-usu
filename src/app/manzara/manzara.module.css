@@ -123,6 +123,53 @@
   display: block;
 }
 
+/* Instagram link card */
+.igCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  margin: 0 -24px;
+  background: linear-gradient(135deg, rgba(240,148,51,0.08), rgba(188,24,136,0.08));
+  border-top: 1px solid rgba(240,148,51,0.15);
+  border-bottom: 1px solid rgba(188,24,136,0.15);
+  text-decoration: none;
+  color: var(--foreground);
+  transition: background 0.2s;
+}
+
+.igCard:hover {
+  background: linear-gradient(135deg, rgba(240,148,51,0.14), rgba(188,24,136,0.14));
+}
+
+.igCardIcon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.igCardText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.igCardTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+  font-family: 'Outfit', sans-serif;
+}
+
+.igCardSub {
+  font-size: 0.8rem;
+  opacity: 0.55;
+}
+
 .location {
   font-size: 0.8rem;
   opacity: 0.6;

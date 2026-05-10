@@ -14,7 +14,7 @@ import { IconHeart, IconChat, IconMap, IconCamp, IconUser, IconBell, IconShare, 
 import PolaroidStory from '@/components/PolaroidStory';
 import ImageCropper from '@/components/ImageCropper';
 
-const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i;
+const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv|stories)\/[\w.-]+/i;
 const isInstagramUrl = (url?: string | null): boolean => !!url && INSTAGRAM_URL_RE.test(url);
 
 export default function ManzaraPage() {
@@ -423,18 +423,33 @@ export default function ManzaraPage() {
                 
                 {post.image_url && (
                   isInstagramUrl(post.image_url) ? (
-                    <div className={styles.igEmbedWrap}>
-                      <blockquote
-                        className="instagram-media"
-                        data-instgrm-permalink={post.image_url}
-                        data-instgrm-version="14"
-                        style={{ background: '#000', border: 0, margin: 0, padding: 0, width: '100%' }}
-                      >
-                        <a href={post.image_url} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', opacity: 0.6 }}>
-                          Instagram'da görüntüle
-                        </a>
-                      </blockquote>
-                    </div>
+                    <a
+                      href={post.image_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.igCard}
+                    >
+                      <div className={styles.igCardIcon}>
+                        <svg viewBox="0 0 24 24" fill="none" width="32" height="32">
+                          <rect x="2" y="2" width="20" height="20" rx="5" stroke="url(#igGrad)" strokeWidth="2"/>
+                          <circle cx="12" cy="12" r="4.5" stroke="url(#igGrad)" strokeWidth="2"/>
+                          <circle cx="17.5" cy="6.5" r="1" fill="url(#igGrad)"/>
+                          <defs>
+                            <linearGradient id="igGrad" x1="2" y1="22" x2="22" y2="2" gradientUnits="userSpaceOnUse">
+                              <stop stopColor="#f09433"/>
+                              <stop offset="0.25" stopColor="#e6683c"/>
+                              <stop offset="0.5" stopColor="#dc2743"/>
+                              <stop offset="0.75" stopColor="#cc2366"/>
+                              <stop offset="1" stopColor="#bc1888"/>
+                            </linearGradient>
+                          </defs>
+                        </svg>
+                      </div>
+                      <div className={styles.igCardText}>
+                        <span className={styles.igCardTitle}>Instagram Gönderisi</span>
+                        <span className={styles.igCardSub}>Görmek için tıkla →</span>
+                      </div>
+                    </a>
                   ) : (
                     <div className={styles.imageContainer} onClick={() => {
                       const visiblePosts = posts.filter(p => p.image_url && !isInstagramUrl(p.image_url));
@@ -513,17 +528,6 @@ export default function ManzaraPage() {
         />
       )}
 
-      {/* Instagram embed processor — only mounts when there's an IG post in the feed */}
-      {posts.some(p => isInstagramUrl(p.image_url)) && (
-        <Script
-          src="https://www.instagram.com/embed.js"
-          strategy="lazyOnload"
-          onLoad={() => {
-            const w = window as unknown as { instgrm?: { Embeds?: { process: () => void } } };
-            w.instgrm?.Embeds?.process();
-          }}
-        />
-      )}
 
       {/* Add Post Modal */}
       {isModalOpen && (
