@@ -58,8 +58,30 @@
 .postHeader {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 16px;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--foreground);
+  opacity: 0.35;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.deleteBtn:hover {
+  background: rgba(220, 53, 69, 0.12);
+  opacity: 1;
+  color: #dc3545;
 }
 
 .userInfo {
@@ -121,14 +143,14 @@
   margin-right: -24px;
   background: #000;
   line-height: 0;
-  max-height: 500px;
-  overflow: hidden;
   position: relative;
 }
 
 .postImage {
   width: 100%;
+  max-height: 620px;
   object-fit: contain;
+  display: block;
 }
 
 .postFooter {
