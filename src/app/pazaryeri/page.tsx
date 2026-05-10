@@ -38,9 +38,10 @@ export default function PazaryeriPage() {
   const categories = ['Tümü', 'Enerji & Elektrik', 'Su & Tesisat', 'Isıtma & Soğutma', 'Dış Donanım', 'Mobilya & İç Mekan', 'Elektronik', 'İç Donanım'];
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) fetchBookmarks(user.id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) fetchBookmarks(u.id);
     });
     fetchProducts();
   }, [activeCategory]);
@@ -112,39 +113,45 @@ export default function PazaryeriPage() {
     
     setIsSubmitting(true);
 
-    let finalImageUrl = 'https://images.unsplash.com/photo-1582214695027-e4c1f60ce3cb?q=80&w=400&auto=format&fit=crop';
-    
-    if (imageFile) {
-      const uploadedUrl = await uploadImage(imageFile);
-      if (uploadedUrl) {
-        finalImageUrl = uploadedUrl;
+    try {
+      let finalImageUrl = 'https://images.unsplash.com/photo-1582214695027-e4c1f60ce3cb?q=80&w=400&auto=format&fit=crop';
+
+      if (imageFile) {
+        const uploadedUrl = await uploadImage(imageFile);
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+        } else {
+          showToast("Görsel yüklenemedi, varsayılan görsel kullanılacak.", "info");
+        }
+      }
+
+      const { error } = await supabase.from('marketplace_items').insert([
+        {
+          user_id: user.id,
+          title: newItem.title,
+          description: newItem.description,
+          category: newItem.category,
+          price: parseFloat(newItem.price),
+          image_url: finalImageUrl,
+          location_name: newItem.location_name
+        }
+      ]);
+
+      if (!error) {
+        setIsModalOpen(false);
+        setNewItem({ title: '', description: '', category: 'Elektronik', price: '', location_name: '' });
+        setImageFile(null);
+        showToast("İlan başarıyla yayınlandı!", "success");
+        fetchProducts();
       } else {
-        showToast("Görsel yüklenemedi, varsayılan görsel kullanılacak.", "info");
+        showToast("Hata: " + error.message, "error");
       }
+    } catch (err: any) {
+      console.error("Pazaryeri insert error:", err);
+      showToast(err?.message || "Beklenmedik bir hata oluştu.", "error");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const { error } = await supabase.from('marketplace_items').insert([
-      {
-        user_id: user.id,
-        title: newItem.title,
-        description: newItem.description,
-        category: newItem.category,
-        price: parseFloat(newItem.price),
-        image_url: finalImageUrl,
-        location_name: newItem.location_name
-      }
-    ]);
-
-    if (!error) {
-      setIsModalOpen(false);
-      setNewItem({ title: '', description: '', category: 'Elektronik', price: '', location_name: '' });
-      setImageFile(null);
-      showToast("İlan başarıyla yayınlandı!", "success");
-      fetchProducts();
-    } else {
-      showToast("Hata: " + error.message, "error");
-    }
-    setIsSubmitting(false);
   };
 
   return (

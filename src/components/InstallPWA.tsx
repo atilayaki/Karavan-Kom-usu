@@ -76,7 +76,14 @@ export default function InstallPWA() {
 
   return (
     <>
-      <div className={styles.fab} onClick={handleClick} aria-label="Uygulamayı yükle" role="button" tabIndex={0}>
+      <div
+        className={styles.fab}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
+        aria-label="Uygulamayı yükle"
+        role="button"
+        tabIndex={0}
+      >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v12" />
           <path d="m7 8 5-5 5 5" />

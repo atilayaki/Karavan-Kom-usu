@@ -40,10 +40,10 @@ export default function ProfilePage() {
     
     try {
       // 1. Session ve User kontrolü
-      const { data: userData, error: authError } = await supabase.auth.getUser();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
       if (authError) console.warn("Auth check error:", authError);
-      
-      const currentUser = userData?.user;
+
+      const currentUser = session?.user;
       setMyId(currentUser?.id || null);
 
       // 2. Profil verisi çekme

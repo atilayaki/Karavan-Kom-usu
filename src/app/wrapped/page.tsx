@@ -43,7 +43,8 @@ export default function WrappedPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) { setLoading(false); return; }
       setUserId(user.id);
 

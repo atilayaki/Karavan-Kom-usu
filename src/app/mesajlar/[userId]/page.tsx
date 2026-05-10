@@ -31,7 +31,7 @@ export default function ChatPage({ params }: { params: Promise<{ userId: string 
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id || null));
+    supabase.auth.getSession().then(({ data: { session } }) => setMyId(session?.user?.id || null));
     supabase.from('profiles').select('id, full_name, avatar_url, username').eq('id', partnerId).single()
       .then(({ data }) => setPartner(data));
   }, [partnerId]);

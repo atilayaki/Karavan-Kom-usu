@@ -135,7 +135,7 @@ export default function RotaPage() {
   const [routeMeta, setRouteMeta] = useState({ title: '', description: '' });
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
   }, []);
 
   const findRoute = async () => {

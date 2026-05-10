@@ -167,7 +167,18 @@ export interface Friendship {
   id: number;
   user_id: string;
   friend_id: string;
+  status?: 'pending' | 'accepted' | 'blocked' | string;
   created_at?: string;
+}
+
+export interface DirectMessage {
+  id: number;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  is_read?: boolean;
+  created_at: string;
+  profiles?: Pick<Profile, 'full_name' | 'avatar_url'> | null;
 }
 
 export interface SeasonalTip {

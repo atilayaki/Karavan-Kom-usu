@@ -46,8 +46,8 @@ export default function TelsizPage() {
     // Force scroll to top on navigation to avoid shifted layout
     window.scrollTo(0, 0);
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
     });
     fetchAllProfiles();
   }, []);

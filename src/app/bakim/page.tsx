@@ -39,8 +39,8 @@ export default function BakimPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const uid = data.user?.id || null;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const uid = session?.user?.id || null;
       setUserId(uid);
       if (uid) fetchLogs(uid);
       else setLoading(false);

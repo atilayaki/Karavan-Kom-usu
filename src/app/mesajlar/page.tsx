@@ -35,7 +35,8 @@ export default function MesajlarPage() {
   activeChatRef.current = activeChat;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null;
       userRef.current = user;
       setUser(user);
       if (user) {

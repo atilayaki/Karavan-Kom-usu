@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, createContext, useContext } from 'react';
+import { useState, useCallback, createContext, useContext, useEffect, useRef } from 'react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -30,20 +30,29 @@ const ICONS: Record<ToastType, string> = {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const counterRef = useRef(0);
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => { timers.forEach(clearTimeout); timers.clear(); };
+  }, []);
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Date.now();
+    const id = Date.now() * 1000 + (counterRef.current++ % 1000);
     setToasts(prev => [...prev, { id, message, type }]);
-    
-    // Start exit animation after 3 seconds
-    setTimeout(() => {
+
+    const t1 = setTimeout(() => {
       setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
+      timersRef.current.delete(t1);
     }, 3000);
-    
-    // Remove after exit animation completes
-    setTimeout(() => {
+    timersRef.current.add(t1);
+
+    const t2 = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
+      timersRef.current.delete(t2);
     }, 3300);
+    timersRef.current.add(t2);
   }, []);
 
   return (

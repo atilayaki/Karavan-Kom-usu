@@ -29,7 +29,7 @@ export default function EtkinliklerPage() {
   const [newCat, setNewCat] = useState('Kamp');
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getSession().then(({ data: { session } }) => setUser(session?.user ?? null));
     fetchEvents();
   }, []);
 

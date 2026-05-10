@@ -4,7 +4,6 @@ import styles from './manzara.module.css';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import Script from 'next/script';
 import { uploadImage } from '@/lib/uploadImage';
 import { useToast } from '@/components/Toast';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
@@ -52,10 +51,12 @@ export default function ManzaraPage() {
   const [storyStartIndex, setStoryStartIndex] = useState(0);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        supabase.from('post_likes').select('post_id').eq('user_id', user.id).then(({ data }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        supabase.from('post_likes').select('post_id').eq('user_id', u.id).then(({ data, error }) => {
+          if (error) console.error('post_likes fetch error:', error);
           if (data) setLikedPosts(new Set(data.map(l => l.post_id)));
         });
       }
@@ -65,16 +66,6 @@ export default function ManzaraPage() {
   useEffect(() => {
     fetchFeed();
   }, [filter]);
-
-  // Re-process Instagram blockquotes whenever the feed changes after the
-  // embed.js script has already loaded. Without this, IG posts added on
-  // filter switch or after a fresh share render as raw <blockquote>s.
-  useEffect(() => {
-    const w = window as unknown as { instgrm?: { Embeds?: { process: () => void } } };
-    if (w.instgrm?.Embeds && posts.some(p => isInstagramUrl(p.image_url))) {
-      w.instgrm.Embeds.process();
-    }
-  }, [posts]);
 
   const handleShareLink = async (post: any) => {
     const shareData = {

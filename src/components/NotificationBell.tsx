@@ -26,7 +26,8 @@ export default function NotificationBell({ align = 'right' }: { align?: 'left' |
     let mounted = true;
     let channel: any;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user;
       if (!mounted || !user) return;
       setUserId(user.id);
 

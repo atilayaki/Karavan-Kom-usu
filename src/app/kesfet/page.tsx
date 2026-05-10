@@ -76,12 +76,13 @@ export default function KesfetPage() {
   const [checkinCounts, setCheckinCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
         Promise.all([
-          supabase.from('bookmarks').select('item_id').eq('user_id', user.id).eq('item_type', 'spot'),
-          supabase.from('spot_checkins').select('spot_id').eq('user_id', user.id),
+          supabase.from('bookmarks').select('item_id').eq('user_id', u.id).eq('item_type', 'spot'),
+          supabase.from('spot_checkins').select('spot_id').eq('user_id', u.id),
         ]).then(([bookRes, checkinRes]) => {
           if (bookRes.data) setBookmarkedSpots(new Set(bookRes.data.map(b => b.item_id)));
           if (checkinRes.data) setCheckedInSpots(new Set(checkinRes.data.map(c => c.spot_id)));

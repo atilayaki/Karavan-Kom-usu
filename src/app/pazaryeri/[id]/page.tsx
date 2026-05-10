@@ -47,9 +47,9 @@ export default function MarketplaceDetailPage({ params }: { params: Promise<{ id
     let mounted = true;
 
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
-      setUser(user);
+      setUser(session?.user ?? null);
 
       const { data, error } = await supabase
         .from('marketplace_items')
