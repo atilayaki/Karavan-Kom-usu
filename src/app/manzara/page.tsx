@@ -201,9 +201,10 @@ export default function ManzaraPage() {
       if (hasIG) {
         resolvedUrl = igUrl;
       } else if (imageFile) {
+        showToast("Görsel yükleniyor...", "info");
         resolvedUrl = await uploadImage(imageFile);
         if (!resolvedUrl) {
-          showToast("Görsel yüklenemedi. Lütfen tekrar deneyin.", "error");
+          showToast("Görsel yüklenemedi. Dosya boyutunu kontrol edin veya tekrar deneyin.", "error");
           return;
         }
       }
@@ -218,13 +219,13 @@ export default function ManzaraPage() {
       ]);
 
       if (!error) {
-        showToast("Manzaranız başarıyla paylaşıldı!", "success");
+        showToast("Manzaranız başarıyla paylaşıldı! 🎉", "success");
         setIsModalOpen(false);
         setNewPost({ caption: '', location_name: '', instagram_url: '' });
         setImageFile(null);
         fetchPosts();
       } else {
-        showToast("Hata: " + error.message, "error");
+        showToast("Kaydetme hatası: " + error.message, "error");
       }
     } catch (err: any) {
       showToast(err?.message || "Beklenmedik bir hata oluştu.", "error");
