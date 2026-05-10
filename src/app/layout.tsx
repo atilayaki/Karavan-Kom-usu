@@ -26,11 +26,19 @@ export const metadata: Metadata = {
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
   },
+  metadataBase: new URL("https://karavankomsusu.com"),
   openGraph: {
     title: "Karavan Komşusu",
     description: "Yolun Tadını Birlikte Çıkaralım",
+    url: "https://karavankomsusu.com",
+    siteName: "Karavan Komşusu",
     type: "website",
     locale: "tr_TR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Karavan Komşusu",
+    description: "Yolun Tadını Birlikte Çıkaralım",
   },
 };
 
