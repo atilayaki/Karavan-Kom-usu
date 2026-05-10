@@ -1,7 +1,7 @@
 'use client';
 
 import styles from './manzara.module.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { uploadImage } from '@/lib/uploadImage';
@@ -14,7 +14,68 @@ import PolaroidStory from '@/components/PolaroidStory';
 import ImageCropper from '@/components/ImageCropper';
 
 const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv|stories)\/[\w.-]+/i;
+
+const PHOTO_FILTERS = [
+  { id: 'none',     label: 'Serbest',     css: 'none' },
+  { id: 'vintage',  label: 'Vintage',     css: 'sepia(0.6) contrast(1.1) brightness(0.95) saturate(0.9)' },
+  { id: 'sunset',   label: 'Gün Batımı', css: 'saturate(1.6) hue-rotate(-15deg) contrast(1.1) brightness(1.05)' },
+  { id: 'forest',   label: 'Orman',      css: 'saturate(1.4) hue-rotate(30deg) brightness(0.9) contrast(1.15)' },
+  { id: 'night',    label: 'Gece',       css: 'brightness(0.6) contrast(1.4) saturate(0.5) hue-rotate(200deg)' },
+  { id: 'polaroid', label: 'Polaroid',   css: 'contrast(1.1) brightness(1.1) saturate(0.8) sepia(0.2)' },
+] as const;
+
+type FilterId = typeof PHOTO_FILTERS[number]['id'];
+
+function applyFilterToFile(file: File, cssFilter: string): Promise<File> {
+  if (cssFilter === 'none') return Promise.resolve(file);
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d')!;
+      ctx.filter = cssFilter;
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(
+        (blob) => blob
+          ? resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }))
+          : reject(new Error('canvas toBlob failed')),
+        'image/jpeg',
+        0.92,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+    img.src = url;
+  });
+}
 const isInstagramUrl = (url?: string | null): boolean => !!url && INSTAGRAM_URL_RE.test(url);
+
+const HASHTAG_RE = /(#[\wÀ-ɏĀ-ž]+)/g;
+
+function CaptionWithHashtags({ text, onTagClick }: { text: string; onTagClick: (tag: string) => void }) {
+  const parts = text.split(HASHTAG_RE);
+  return (
+    <>
+      {parts.map((part, i) =>
+        HASHTAG_RE.test(part) ? (
+          <button
+            key={i}
+            type="button"
+            className={styles.hashtag}
+            onClick={(e) => { e.stopPropagation(); onTagClick(part.slice(1).toLowerCase()); }}
+          >
+            {part}
+          </button>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
 
 const getIgEmbedUrl = (url: string): string | null => {
   const m = url.match(/instagram\.com\/(p|reel|tv)\/([\w-]+)/);
@@ -49,6 +110,34 @@ export default function ManzaraPage() {
   // Polaroid story mode
   const [storyOpen, setStoryOpen] = useState(false);
   const [storyStartIndex, setStoryStartIndex] = useState(0);
+
+  // Hashtag filter
+  const [activeHashtag, setActiveHashtag] = useState<string | null>(null);
+
+  // Photo filter picker
+  const [selectedFilter, setSelectedFilter] = useState<FilterId>('none');
+  const previewUrlRef = useRef<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      previewUrlRef.current = url;
+      setPreviewUrl(url);
+    } else {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+      setPreviewUrl(null);
+    }
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, [imageFile]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -203,7 +292,9 @@ export default function ManzaraPage() {
         igOriginalUrl = igUrl;
       } else if (imageFile) {
         showToast("Görsel yükleniyor...", "info");
-        resolvedUrl = await uploadImage(imageFile);
+        const filterCss = PHOTO_FILTERS.find(f => f.id === selectedFilter)?.css ?? 'none';
+        const fileToUpload = await applyFilterToFile(imageFile, filterCss);
+        resolvedUrl = await uploadImage(fileToUpload);
         if (!resolvedUrl) {
           showToast("Görsel yüklenemedi. Dosya boyutunu kontrol edin veya tekrar deneyin.", "error");
           return;
@@ -225,6 +316,7 @@ export default function ManzaraPage() {
         setIsModalOpen(false);
         setNewPost({ caption: '', location_name: '', instagram_url: '' });
         setImageFile(null);
+        setSelectedFilter('none');
         fetchPosts();
       } else {
         showToast("Kaydetme hatası: " + error.message, "error");
@@ -321,6 +413,14 @@ export default function ManzaraPage() {
           ))}
         </div>
 
+        {/* Active hashtag filter chip */}
+        {activeHashtag && (
+          <div className={styles.activeTagChip}>
+            <span>#{activeHashtag}</span>
+            <button onClick={() => setActiveHashtag(null)} aria-label="Filtreyi kaldır">×</button>
+          </div>
+        )}
+
         {/* Feed */}
         <div className={styles.feed + " stagger-children"}>
           {loading ? (
@@ -385,7 +485,10 @@ export default function ManzaraPage() {
           ) : posts.length === 0 ? (
             <p style={{textAlign: 'center', opacity: 0.7}}>Henüz bir manzara paylaşılmamış.</p>
           ) : (
-            posts.map((post) => (
+            (activeHashtag
+              ? posts.filter(p => p.caption.toLowerCase().includes('#' + activeHashtag))
+              : posts
+            ).map((post) => (
               <div key={post.id} className={styles.postCard + " glass-card"}>
                 
                 <div className={styles.postHeader}>
@@ -419,7 +522,9 @@ export default function ManzaraPage() {
                   )}
                 </div>
 
-                <p className={styles.postText}>{post.caption}</p>
+                <p className={styles.postText}>
+                  <CaptionWithHashtags text={post.caption} onTagClick={setActiveHashtag} />
+                </p>
                 
                 {/* Instagram embed iframe */}
                 {(post.instagram_url || isInstagramUrl(post.image_url)) && (() => {
@@ -573,6 +678,25 @@ export default function ManzaraPage() {
                 </div>
               </div>
 
+              {imageFile && previewUrl && (
+                <div className={styles.filterPicker}>
+                  <label>🎨 Filtre</label>
+                  <div className={styles.filterOptions}>
+                    {PHOTO_FILTERS.map(f => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className={`${styles.filterOption} ${selectedFilter === f.id ? styles.filterActive : ''}`}
+                        onClick={() => setSelectedFilter(f.id)}
+                      >
+                        <img src={previewUrl} alt={f.label} style={{ filter: f.css }} />
+                        <span>{f.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className={styles.orDivider}>— ya da —</div>
 
               <div className={styles.inputGroup}>
@@ -589,7 +713,7 @@ export default function ManzaraPage() {
               <div className={styles.inputGroup}>
                 <label>✍️ Açıklama</label>
                 <textarea 
-                  placeholder="Günün nasıl geçiyor? Manzaranı tarif et..." 
+                  placeholder="Günün nasıl geçiyor? Manzaranı tarif et... #karavan #kamp" 
                   rows={4}
                   value={newPost.caption}
                   onChange={(e) => setNewPost({...newPost, caption: e.target.value})}
@@ -598,7 +722,7 @@ export default function ManzaraPage() {
               </div>
 
               <div className={styles.modalActions}>
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-ghost">İptal</button>
+                <button type="button" onClick={() => { setIsModalOpen(false); setSelectedFilter('none'); setImageFile(null); }} className="btn-ghost">İptal</button>
                 <button type="submit" className="btn-primary" disabled={isSubmitting}>
                   {isSubmitting ? 'Paylaşılıyor...' : 'Manzarayı Paylaş'}
                 </button>

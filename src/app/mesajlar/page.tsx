@@ -263,6 +263,17 @@ export default function MesajlarPage() {
       setMessages(prev => prev.filter(m => m.id !== tempId));
     } else if (data) {
       setMessages(prev => prev.map(m => m.id === tempId ? data : m));
+      // Push notification to receiver (best-effort)
+      fetch('/api/push/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          receiverId: activeChat.id,
+          title: `${user.user_metadata?.full_name || 'Komşun'} mesaj gönderdi`,
+          body: text.length > 80 ? text.slice(0, 80) + '…' : text,
+          url: `/mesajlar`,
+        }),
+      }).catch(() => {});
     }
   };
 

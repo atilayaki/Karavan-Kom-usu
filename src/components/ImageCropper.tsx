@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styles from './ImageCropper.module.css';
@@ -91,7 +92,11 @@ export default function ImageCropper({ src, onConfirm, onCancel }: Props) {
     }
   };
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <div className={styles.header}>
@@ -170,6 +175,7 @@ export default function ImageCropper({ src, onConfirm, onCancel }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

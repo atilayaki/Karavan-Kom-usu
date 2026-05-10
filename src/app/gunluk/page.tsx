@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
 import styles from './gunluk.module.css';
@@ -13,6 +13,7 @@ import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/c
 import { uploadImage } from '@/lib/uploadImage';
 import KaravanQRCard from '@/components/KaravanQRCard';
 import OnboardingModal from '@/components/OnboardingModal';
+import ConfettiCelebration from '@/components/ConfettiCelebration';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -151,6 +152,8 @@ export default function GunlukPage() {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [friendsList, setFriendsList] = useState<any[]>([]);
   const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [celebrationAchievement, setCelebrationAchievement] = useState<{ icon: string; title: string; description?: string | null } | null>(null);
+  const prevAchievementIds = useRef<Set<number> | null>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -220,22 +223,36 @@ export default function GunlukPage() {
 
   const fetchAchievements = async () => {
     if (!session?.user?.id) return;
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('user_achievements')
       .select('achievement_id, earned_at, achievements(*)')
       .eq('user_id', session.user.id);
-    
+
     if (data) {
+      if (prevAchievementIds.current !== null) {
+        const newOnes = data.filter(ua => !prevAchievementIds.current!.has(ua.achievement_id));
+        if (newOnes.length > 0) {
+          const first = newOnes[0];
+          const ach = Array.isArray(first.achievements) ? first.achievements[0] : first.achievements;
+          if (ach) {
+            setCelebrationAchievement({
+              icon: (ach as any).icon || '🏆',
+              title: (ach as any).title || 'Yeni Başarım',
+              description: (ach as any).description,
+            });
+          }
+        }
+      }
+      prevAchievementIds.current = new Set(data.map(ua => ua.achievement_id));
       setUserAchievements(data);
     }
   };
 
   const handleCheckIn = async (uid: string) => {
-    // Supabase RPC call for check_in_user function
     const { error } = await supabase.rpc('check_in_user', { p_user_id: uid });
     if (!error) {
-      // XP updated via trigger, refresh profile
       fetchProfile();
+      fetchAchievements();
     }
   };
 
@@ -305,6 +322,12 @@ export default function GunlukPage() {
   if (session) {
     return (
       <div className={styles.container} ref={scrollRef} key={session.user.id}>
+        {celebrationAchievement && (
+          <ConfettiCelebration
+            achievement={celebrationAchievement}
+            onClose={() => setCelebrationAchievement(null)}
+          />
+        )}
         {showOnboarding && (
           <OnboardingModal
             userId={session.user.id}

@@ -1,41 +1,59 @@
 'use client';
 
 import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
-// One-shot cache & service-worker purge.
-// On first load after this component ships:
-//   1. Unregister any service worker the previous build left behind.
-//   2. Clear every CacheStorage entry that older versions populated.
-//   3. If we actually killed something, reload the tab once so the page
-//      renders against the freshly fetched assets.
-// A sessionStorage sentinel prevents reload loops.
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
+
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const arr = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) arr[i] = rawData.charCodeAt(i);
+  return arr.buffer;
+}
+
+async function subscribeToPush(registration: ServiceWorkerRegistration, userId: string) {
+  try {
+    const existing = await registration.pushManager.getSubscription();
+    const sub = existing ?? await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+    });
+
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, subscription: sub.toJSON() }),
+    });
+  } catch {
+    // Push not supported or denied — silently ignore
+  }
+}
+
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (sessionStorage.getItem('kk_cache_purged_v1') === '1') return;
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
     (async () => {
-      let killedSomething = false;
       try {
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          if (regs.length > 0) killedSomething = true;
-          await Promise.all(regs.map((r) => r.unregister()));
-        }
-        if ('caches' in window) {
-          const keys = await caches.keys();
-          if (keys.length > 0) killedSomething = true;
-          await Promise.all(keys.map((k) => caches.delete(k)));
+        const registration = await navigator.serviceWorker.register('/sw-push.js');
+        await navigator.serviceWorker.ready;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        if (Notification.permission === 'granted') {
+          subscribeToPush(registration, session.user.id);
+        } else if (Notification.permission === 'default') {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            subscribeToPush(registration, session.user.id);
+          }
         }
       } catch {
-        // best-effort
-      }
-
-      sessionStorage.setItem('kk_cache_purged_v1', '1');
-
-      if (killedSomething) {
-        // Cache-busting full reload — fetch every chunk fresh.
-        window.location.reload();
+        // Service worker registration failed — silently ignore
       }
     })();
   }, []);
