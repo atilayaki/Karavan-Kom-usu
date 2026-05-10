@@ -31,14 +31,7 @@ export default function GunlukPage() {
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setAuthChecking(false);
-    };
-
-    checkAuth();
-
+    // onAuthStateChange fires INITIAL_SESSION immediately from localStorage
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {

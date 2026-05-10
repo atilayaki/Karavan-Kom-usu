@@ -72,6 +72,7 @@ export default function Navbar() {
   }, [open]);
 
   const [user, setUser] = useState<{ id: string; avatarUrl?: string | null } | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   const fetchAvatar = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('avatar_url').eq('id', userId).single();
@@ -79,20 +80,30 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        const avatarUrl = await fetchAvatar(user.id);
-        setUser({ id: user.id, avatarUrl });
+    // getSession reads from localStorage — instant, no network round-trip
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Show user icon immediately, load avatar in background
+        setUser({ id: session.user.id, avatarUrl: null });
+        setAuthReady(true);
+        fetchAvatar(session.user.id).then(avatarUrl => {
+          setUser(prev => prev ? { ...prev, avatarUrl } : null);
+        });
       } else {
-        setUser(null);
+        setAuthReady(true);
       }
     });
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, session) => {
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, session) => {
       if (session?.user) {
-        const avatarUrl = await fetchAvatar(session.user.id);
-        setUser({ id: session.user.id, avatarUrl });
+        setUser(prev => prev?.id === session.user.id ? prev : { id: session.user.id, avatarUrl: null });
+        setAuthReady(true);
+        fetchAvatar(session.user.id).then(avatarUrl => {
+          setUser(prev => prev ? { ...prev, avatarUrl } : null);
+        });
       } else {
         setUser(null);
+        setAuthReady(true);
       }
     });
     return () => { sub.subscription.unsubscribe(); };
@@ -199,10 +210,12 @@ export default function Navbar() {
           <div className={styles.actions}>
             {/* Mobile: sağ üst */}
             <div className={styles.bellMobile}><NotificationBell align="right" /></div>
-            <Link href="/gunluk" className={styles.profileBtn} aria-label="Günlüğüm">
-              {user?.avatarUrl
-                ? <img src={user.avatarUrl} alt="Profil" className={styles.profileAvatar} />
-                : '👤'}
+            <Link href="/gunluk" className={`${styles.profileBtn} ${!authReady ? styles.profileBtnLoading : ''}`} aria-label="Günlüğüm">
+              {!authReady
+                ? null
+                : user?.avatarUrl
+                  ? <img src={user.avatarUrl} alt="Profil" className={styles.profileAvatar} />
+                  : '👤'}
             </Link>
             <ThemeToggle />
           </div>

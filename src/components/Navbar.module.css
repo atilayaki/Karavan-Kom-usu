@@ -212,6 +212,16 @@
   object-fit: cover;
 }
 
+.profileBtnLoading {
+  background: var(--glass-bg, rgba(255,255,255,0.08));
+  animation: navPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes navPulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.8; }
+}
+
 @media (max-width: 768px) {
   .profileBtn { display: none; }
 }
