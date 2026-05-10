@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import styles from './Navbar.module.css';
-import ThemeToggle from './ThemeToggle';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import { supabase } from '@/lib/supabase';
@@ -217,7 +216,6 @@ export default function Navbar() {
                   ? <img src={user.avatarUrl} alt="Profil" className={styles.profileAvatar} />
                   : '👤'}
             </Link>
-            <ThemeToggle />
           </div>
         </div>
       </nav>

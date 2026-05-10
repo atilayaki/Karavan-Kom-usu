@@ -50,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" suppressHydrationWarning>
+    <html lang="tr" className="dark-mode" suppressHydrationWarning>
       <body>
         <ToastProvider>
           <TimeOfDayTheme />
