@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import styles from './profil.module.css';
 import Link from 'next/link';
-import { IconMap, IconSOS } from '@/components/Icons';
+import { IconMap, IconSOS, IconHeart, IconChat } from '@/components/Icons';
 import { useParams } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -20,6 +20,9 @@ export default function ProfilePage() {
   const [friendshipStatus, setFriendshipStatus] = useState<'none' | 'pending_sent' | 'pending_received' | 'accepted'>('none');
   const [friendshipId, setFriendshipId] = useState<number | null>(null);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -28,6 +31,28 @@ export default function ProfilePage() {
       if (cleanupPresence) cleanupPresence();
     };
   }, [profileId]);
+
+  const photoPosts = posts.filter(p => p.image_url);
+
+  const navigateLightbox = useCallback((dir: number) => {
+    setSelectedPost((prev: any) => {
+      if (!prev) return null;
+      const idx = photoPosts.findIndex(p => p.id === prev.id);
+      const next = photoPosts[idx + dir];
+      return next ?? prev;
+    });
+  }, [photoPosts]);
+
+  useEffect(() => {
+    if (!selectedPost) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedPost(null);
+      if (e.key === 'ArrowRight') navigateLightbox(1);
+      if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedPost, navigateLightbox]);
 
   const fetchData = async () => {
     if (!profileId || profileId === 'undefined') {
@@ -111,7 +136,31 @@ export default function ProfilePage() {
         } catch (e) { }
       };
 
-      await Promise.allSettled([fetchStats(), fetchAchievements(), fetchFriendship()]);
+      const fetchPosts = async () => {
+        try {
+          const { data } = await supabase
+            .from('posts')
+            .select('id, image_url, caption, location_name, likes_count, created_at, comments(id)')
+            .eq('user_id', profileId)
+            .not('image_url', 'is', null)
+            .order('created_at', { ascending: false });
+          if (data) setPosts(data);
+        } catch (e) { }
+      };
+
+      const fetchListings = async () => {
+        try {
+          const { data } = await supabase
+            .from('marketplace_items')
+            .select('id, title, price, image_url, category, location_name')
+            .eq('user_id', profileId)
+            .order('created_at', { ascending: false })
+            .limit(4);
+          if (data) setListings(data);
+        } catch (e) { }
+      };
+
+      await Promise.allSettled([fetchStats(), fetchAchievements(), fetchFriendship(), fetchPosts(), fetchListings()]);
 
     } catch (err) {
       console.error("Global Fetch error:", err);
@@ -193,11 +242,18 @@ export default function ProfilePage() {
             {isOwner ? (
               <Link href="/gunluk" className="btn-secondary">⚙️ Düzenle</Link>
             ) : (
-              <button onClick={handleFriendAction} className={friendshipStatus === 'accepted' ? 'btn-ghost' : 'btn-primary'}>
-                {friendshipStatus === 'accepted' ? '✔️ Arkadaş' : 
-                 friendshipStatus === 'pending_sent' ? '⏳ Bekliyor' : 
-                 friendshipStatus === 'pending_received' ? '✅ Kabul Et' : '➕ Ekle'}
-              </button>
+              <>
+                <button onClick={handleFriendAction} className={friendshipStatus === 'accepted' ? 'btn-ghost' : 'btn-primary'}>
+                  {friendshipStatus === 'accepted' ? '✔️ Arkadaş' :
+                   friendshipStatus === 'pending_sent' ? '⏳ Bekliyor' :
+                   friendshipStatus === 'pending_received' ? '✅ Kabul Et' : '➕ Ekle'}
+                </button>
+                {myId && (
+                  <Link href={`/mesajlar/${profileId}`} className="btn-secondary" style={{ textDecoration: 'none' }}>
+                    <IconChat size={15} /> Mesaj
+                  </Link>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -252,12 +308,56 @@ export default function ProfilePage() {
               <button className="btn-primary" onClick={handleFriendAction} style={{marginTop: '15px'}}>Arkadaşlık İsteği Gönder</button>
             </div>
           ) : (
-            <div className={styles.feed}>
-              <div className={styles.emptyFeed}>
-                <IconMap size={40} />
-                <p>Henüz paylaşılmış bir fotoğraf veya yer yok.</p>
+            <>
+              {/* Fotoğraf Galerisi */}
+              <div className={styles.sectionCard + ' glass-card'}>
+                <div className={styles.sectionHeader}>
+                  <h3>Manzaralar</h3>
+                  <span className={styles.sectionCount}>{photoPosts.length} fotoğraf</span>
+                </div>
+                {photoPosts.length > 0 ? (
+                  <div className={styles.photoGrid}>
+                    {photoPosts.map(post => (
+                      <button key={post.id} className={styles.photoItem} onClick={() => setSelectedPost(post)}>
+                        <img src={post.image_url} alt={post.caption ?? ''} />
+                        <div className={styles.photoOverlay}>
+                          <span><IconHeart size={14} filled /> {post.likes_count}</span>
+                          <span><IconChat size={14} /> {post.comments?.length ?? 0}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={styles.emptySection}>
+                    <IconMap size={32} />
+                    <p>Henüz fotoğraf paylaşılmamış.</p>
+                  </div>
+                )}
               </div>
-            </div>
+
+              {/* Aktif İlanlar */}
+              {listings.length > 0 && (
+                <div className={styles.sectionCard + ' glass-card'}>
+                  <div className={styles.sectionHeader}>
+                    <h3>Aktif İlanlar</h3>
+                    <Link href={`/pazaryeri`} className={styles.sectionLink}>Tümünü Gör →</Link>
+                  </div>
+                  <div className={styles.listingGrid}>
+                    {listings.map(item => (
+                      <Link key={item.id} href={`/pazaryeri/${item.id}`} className={styles.listingCard} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <div className={styles.listingImg}>
+                          {item.image_url && <img src={item.image_url} alt={item.title} />}
+                        </div>
+                        <div className={styles.listingInfo}>
+                          <p className={styles.listingTitle}>{item.title}</p>
+                          <span className={styles.listingPrice}>{Number(item.price).toLocaleString('tr-TR')} TL</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </main>
       </div>
@@ -274,6 +374,38 @@ export default function ProfilePage() {
           <div className={styles.zoomClose}>Kapatmak için tıkla</div>
         </div>
       )}
+
+      {selectedPost && (() => {
+        const idx = photoPosts.findIndex(p => p.id === selectedPost.id);
+        return (
+          <div className={styles.lightboxOverlay} onClick={() => setSelectedPost(null)}>
+            <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
+              <button className={styles.lightboxClose} onClick={() => setSelectedPost(null)}>×</button>
+              <div className={styles.lightboxImg}>
+                <img src={selectedPost.image_url} alt={selectedPost.caption ?? ''} />
+                {idx > 0 && (
+                  <button className={`${styles.lightboxNav} ${styles.lightboxPrev}`} onClick={() => navigateLightbox(-1)}>&#8249;</button>
+                )}
+                {idx < photoPosts.length - 1 && (
+                  <button className={`${styles.lightboxNav} ${styles.lightboxNext}`} onClick={() => navigateLightbox(1)}>&#8250;</button>
+                )}
+              </div>
+              <div className={styles.lightboxInfo}>
+                {selectedPost.location_name && (
+                  <div className={styles.lightboxLoc}><IconMap size={14} /> {selectedPost.location_name}</div>
+                )}
+                {selectedPost.caption && <p className={styles.lightboxCaption}>{selectedPost.caption}</p>}
+                <div className={styles.lightboxMeta}>
+                  <span><IconHeart size={14} filled /> {selectedPost.likes_count}</span>
+                  <span><IconChat size={14} /> {selectedPost.comments?.length ?? 0}</span>
+                  <span>{new Date(selectedPost.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                </div>
+                <div className={styles.lightboxCounter}>{idx + 1} / {photoPosts.length}</div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
