@@ -12,6 +12,7 @@ import type { Post, GeographicNote, Route } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import { IconHeart, IconChat, IconMap, IconCamp, IconUser, IconBell, IconShare, IconTrash } from '@/components/Icons';
 import PolaroidStory from '@/components/PolaroidStory';
+import ImageCropper from '@/components/ImageCropper';
 
 const INSTAGRAM_URL_RE = /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[\w-]+/i;
 const isInstagramUrl = (url?: string | null): boolean => !!url && INSTAGRAM_URL_RE.test(url);
@@ -29,6 +30,7 @@ export default function ManzaraPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newPost, setNewPost] = useState({ caption: '', location_name: '', instagram_url: '' });
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -269,6 +271,21 @@ export default function ManzaraPage() {
 
   return (
     <div className={styles.container} ref={scrollRef}>
+      {cropSrc && (
+        <ImageCropper
+          src={cropSrc}
+          onConfirm={(blob) => {
+            const croppedFile = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+            setImageFile(croppedFile);
+            URL.revokeObjectURL(cropSrc);
+            setCropSrc(null);
+          }}
+          onCancel={() => {
+            URL.revokeObjectURL(cropSrc);
+            setCropSrc(null);
+          }}
+        />
+      )}
       <div className={styles.feedWrapper}>
         
         {/* Header / Actions */}
@@ -525,11 +542,18 @@ export default function ManzaraPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = URL.createObjectURL(file);
+                      setCropSrc(url);
+                    }}
                     id="manzara-upload"
                   />
                   <label htmlFor="manzara-upload" className={styles.fileLabel}>
-                    {imageFile ? imageFile.name : 'Görsel Seç veya Sürükle'}
+                    {imageFile
+                      ? <span style={{color:'var(--sunset-orange)', fontWeight:700}}>✓ {imageFile.name}</span>
+                      : 'Görsel Seç veya Sürükle'}
                   </label>
                 </div>
               </div>
