@@ -251,10 +251,12 @@ export default function ManzaraPage() {
     const newLiked = new Set(likedPosts);
     const delta = isLiked ? -1 : 1;
 
+    const newCount = Math.max(currentLikes + delta, 0);
+
     // Optimistic update
     if (isLiked) newLiked.delete(postId); else newLiked.add(postId);
     setLikedPosts(newLiked);
-    setPosts(posts.map(p => p.id === postId ? { ...p, likes_count: Math.max(currentLikes + delta, 0) } : p));
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: newCount } : p));
 
     const { error } = isLiked
       ? await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
@@ -263,8 +265,10 @@ export default function ManzaraPage() {
     if (error) {
       // Rollback
       setLikedPosts(likedPosts);
-      setPosts(posts.map(p => p.id === postId ? { ...p, likes_count: currentLikes } : p));
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes_count: currentLikes } : p));
       showToast("İşlem başarısız: " + error.message, "error");
+    } else {
+      await supabase.rpc('update_post_likes_count', { post_id: postId });
     }
   };
 
