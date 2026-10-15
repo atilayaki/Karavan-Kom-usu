@@ -10,8 +10,7 @@ import SeasonalTips from '@/components/SeasonalTips';
 import ActivityFeed from '@/components/ActivityFeed';
 import ChallengesWidget from '@/components/ChallengesWidget';
 import KomsuRadar from '@/components/KomsuRadar';
-import { IconTool, IconCamp, IconRadio, IconShop, IconBook, IconMap, IconCalendar, IconTrophy, IconCaravan } from '@/components/Icons';
-
+import { IconTool, IconCamp, IconRadio, IconShop, IconBook, IconMap, IconCalendar, IconCaravan } from '@/components/Icons';
 
 const HERO_IMAGES = [
   '/hero-bg.png',
@@ -91,14 +90,16 @@ export default function Home() {
             Türkiye&apos;nin en samimi karavan topluluğuna katıl.<br />
             Ustanı bul, gizli durakları keşfet, telsizle komşularına selam ver.
           </p>
+
           <div className={styles.ctaGroup}>
             <Link href="/kesfet" className="btn-primary">
               <IconMap size={18} /> Keşfetmeye Başla
             </Link>
             <Link href="/gunluk" className="btn-secondary" style={{ color: 'white' }}>
-              <IconCaravan size={18} /> Aramıza Katıl
+              <IconCaravan size={18} /> Karavan Pasaportum
             </Link>
           </div>
+
           <button
             className={styles.tourBtn}
             onClick={() => window.dispatchEvent(new CustomEvent('karavan:show-tour'))}
@@ -112,7 +113,44 @@ export default function Home() {
           <div className={styles.scrollMouse}>
             <div className={styles.scrollWheel}></div>
           </div>
-          <span>Keşfet</span>
+          <span>Kokpit</span>
+        </div>
+      </section>
+
+      {/* ─── Hızlı Karavan Kokpiti (Quick Actions) ─── */}
+      <section className={`${styles.cockpitBar} reveal`}>
+        <div className={styles.cockpitGrid}>
+          <Link href="/kesfet" className={styles.cockpitActionCard}>
+            <span className={styles.cockpitActionIcon}>💧</span>
+            <div className={styles.cockpitActionText}>
+              <strong>Su & Elektrik Bul</strong>
+              <small>En yakın ikmal noktaları</small>
+            </div>
+          </Link>
+
+          <Link href="/telsiz" className={styles.cockpitActionCard}>
+            <span className={styles.cockpitActionIcon}>📻</span>
+            <div className={styles.cockpitActionText}>
+              <strong>Telsize Bağlan</strong>
+              <small>Canlı çevre frekansı</small>
+            </div>
+          </Link>
+
+          <Link href="/rota" className={styles.cockpitActionCard}>
+            <span className={styles.cockpitActionIcon}>🛣️</span>
+            <div className={styles.cockpitActionText}>
+              <strong>Rota Planlayıcı</strong>
+              <small>Karavana uygun yol çiz</small>
+            </div>
+          </Link>
+
+          <Link href="/telsiz?channel=Acil%20Durum" className={`${styles.cockpitActionCard} ${styles.cockpitActionSOS}`}>
+            <span className={styles.cockpitActionIcon}>🚨</span>
+            <div className={styles.cockpitActionText}>
+              <strong>Acil SOS Yayını</strong>
+              <small>Kanal 16 acil yardım</small>
+            </div>
+          </Link>
         </div>
       </section>
 
@@ -128,86 +166,118 @@ export default function Home() {
       </section>
 
       <div className={styles.contentArea}>
-        {/* ─── Weather Widget ─── */}
-        <div className="reveal">
-          <WeatherWidget />
-        </div>
+        {/* ─── Modern Bento Grid: Karavan Kontrol Paneli ─── */}
+        <section className={styles.bentoSection}>
+          <div className={styles.bentoHeader}>
+            <h2 className={styles.sectionTitle}>
+              <span className="font-accent" style={{ color: 'var(--sunset-orange)', fontSize: '1.2em' }}>Seyahat Kokpiti</span>
+              <br />Yol Durumu & Komşular
+            </h2>
+            <p className={styles.sectionSub}>Konumuna ve mevsime özel anlık güncellemeler</p>
+          </div>
 
-        {/* ─── Seasonal Tips ─── */}
-        <div className="reveal" style={{ transitionDelay: '100ms' }}>
-          <SeasonalTips />
-        </div>
+          <div className={styles.bentoGrid}>
+            {/* Bento Sol: Hava Durumu & Mevsim Rehberi */}
+            <div className={styles.bentoCol}>
+              <div className="reveal">
+                <WeatherWidget />
+              </div>
+              <div className="reveal" style={{ transitionDelay: '100ms' }}>
+                <SeasonalTips />
+              </div>
+            </div>
 
-        {/* ─── Weekly Challenges ─── */}
-        <div className="reveal" style={{ transitionDelay: '150ms' }}>
-          <ChallengesWidget />
-        </div>
+            {/* Bento Sağ: Komşu Radarı & Haftalık Meydan Okuma */}
+            <div className={styles.bentoCol}>
+              <div className="reveal" style={{ transitionDelay: '150ms' }}>
+                <KomsuRadar />
+              </div>
+              <div className="reveal" style={{ transitionDelay: '200ms' }}>
+                <ChallengesWidget />
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* ─── Feature Cards ─── */}
+        {/* ─── Feature Cards (Ekosistem) ─── */}
         <section className={`${styles.features} stagger-children`}>
-          <h2 className={styles.sectionTitle}>
-            <span className="font-accent" style={{ color: 'var(--sunset-orange)', fontSize: '1.2em' }}>Neler Var?</span>
-            <br />Tüm Özellikler
-          </h2>
+          <div className={styles.bentoHeader}>
+            <h2 className={styles.sectionTitle}>
+              <span className="font-accent" style={{ color: 'var(--sunset-orange)', fontSize: '1.2em' }}>Neler Var?</span>
+              <br />Karavan Ekosistemi
+            </h2>
+            <p className={styles.sectionSub}>Yolculuğunu kolaylaştıracak ve keyif katacak tüm araçlar</p>
+          </div>
 
           <div className={styles.featureGrid}>
             <Link href="/kesfet" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.1)' }}>
-                <IconTool size={28} color="var(--forest-green)" />
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.15)' }}>
+                <IconCamp size={28} color="var(--forest-green)" />
+              </div>
+              <h3>Sakin Köşeler</h3>
+              <p>Güvenli ve huzurlu konaklama noktalarını filtreleyip haritada keşfet.</p>
+            </Link>
+
+            <Link href="/kesfet?category=Yol%20Yardımcısı" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(255, 140, 66, 0.15)' }}>
+                <IconTool size={28} color="var(--sunset-orange)" />
               </div>
               <h3>Yol Yardımcıları</h3>
               <p>Güneş paneli, webasto, marangoz — karavanına özel uzman ustalar.</p>
             </Link>
 
-            <Link href="/kesfet" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(255, 140, 66, 0.1)' }}>
-                <IconCamp size={28} color="var(--sunset-orange)" />
-              </div>
-              <h3>Sakin Köşeler</h3>
-              <p>Güvenli ve huzurlu konaklama noktalarını haritada keşfet.</p>
-            </Link>
-
             <Link href="/telsiz" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(135, 206, 235, 0.15)' }}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(135, 206, 235, 0.2)' }}>
                 <IconRadio size={28} color="var(--sky-blue)" />
               </div>
-              <h3>Telsiz</h3>
-              <p>Yoldaki komşularınla anlık haberleş, acil durumda SOS gönder.</p>
-            </Link>
-
-            <Link href="/pazaryeri" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(139, 69, 19, 0.1)' }}>
-                <IconShop size={28} color="var(--earth-brown)" />
-              </div>
-              <h3>Pazaryeri</h3>
-              <p>İkinci el karavan ekipmanlarını güvenle al ve sat.</p>
-            </Link>
-
-            <Link href="/rehber" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.1)' }}>
-                <IconBook size={28} color="var(--forest-green)" />
-              </div>
-              <h3>Rehber</h3>
-              <p>Dönüşüm mevzuatı, TSE, ruhsat — bilmen gereken her şey.</p>
+              <h3>Telsiz & SOS</h3>
+              <p>Yoldaki komşularınla anlık haberleş, acil durumda koordinat paylaş.</p>
             </Link>
 
             <Link href="/manzara" className={`${styles.featureCard} glass-card`}>
-              <div className={styles.featureIconWrap} style={{ background: 'rgba(255, 140, 66, 0.1)' }}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(255, 140, 66, 0.15)' }}>
                 <IconMap size={28} color="var(--sunset-orange)" />
               </div>
-              <h3>Yol Manzarası</h3>
-              <p>Fotoğraflarınla ilham ver, rotanı ve anılarını paylaş.</p>
+              <h3>Yol Manzarası & Rotalar</h3>
+              <p>Fotoğraflarınla ilham ver, komşuların askıda bıraktığı notları oku.</p>
+            </Link>
+
+            <Link href="/pazaryeri" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(139, 69, 19, 0.15)' }}>
+                <IconShop size={28} color="var(--earth-brown)" />
+              </div>
+              <h3>Pazaryeri</h3>
+              <p>İkinci el karavan ekipmanlarını komşularınla güvenle al ve sat.</p>
+            </Link>
+
+            <Link href="/bakim" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.15)' }}>
+                <span style={{ fontSize: '1.6rem' }}>🔧</span>
+              </div>
+              <h3>Bakım Takvimi</h3>
+              <p>Akü, yağ, tüp ve su tesisatı servis geçmişini dijital ortamda takip et.</p>
+            </Link>
+
+            <Link href="/kamp-atesi" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(255, 100, 50, 0.2)' }}>
+                <span style={{ fontSize: '1.6rem' }}>🔥</span>
+              </div>
+              <h3>Kamp Ateşi</h3>
+              <p>Her gece 20:00'da alevlenen ve gece yarısı sönen topluluk muhabbeti.</p>
+            </Link>
+
+            <Link href="/rehber" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.15)' }}>
+                <IconBook size={28} color="var(--forest-green)" />
+              </div>
+              <h3>Mevzuat Rehberi</h3>
+              <p>Dönüşüm mevzuatı, TSE, B sınıfı ehliyet — bilmen gereken her kural.</p>
             </Link>
           </div>
         </section>
 
-        {/* ─── Komşu Radarı ─── */}
-        <div className="reveal" style={{ transitionDelay: '180ms' }}>
-          <KomsuRadar />
-        </div>
-
-        {/* ─── Activity Feed ─── */}
-        <div className="reveal" style={{ transitionDelay: '200ms' }}>
+        {/* ─── Activity Feed (Canlı Topluluk Akışı) ─── */}
+        <div className="reveal" style={{ transitionDelay: '150ms' }}>
           <ActivityFeed />
         </div>
 

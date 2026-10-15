@@ -14,9 +14,9 @@ export async function POST(req: Request) {
 
     const { spawn } = await import('child_process');
     const toolDir = path.join(process.cwd(), 'tools', 'social-commenter');
-    const scriptName = 'index.mjs';
+    const scriptPath = path.join(toolDir, 'index.mjs');
 
-    const child = spawn('node', [scriptName, url], {
+    const child = spawn(process.execPath, [scriptPath, url], {
       detached: true,
       stdio: 'ignore',
       cwd: toolDir,

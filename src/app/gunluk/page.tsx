@@ -9,11 +9,12 @@ import { useScrollReveal } from '@/hooks/useScrollReveal';
 import Link from 'next/link';
 import type { Profile, UserAchievement } from '@/lib/database.types';
 import type { Session } from '@supabase/supabase-js';
-import { IconUser, IconMap, IconHeart, IconCamp, IconSOS, IconCamera } from '@/components/Icons';
+import { IconUser, IconMap, IconCamp, IconCamera } from '@/components/Icons';
 import { uploadImage } from '@/lib/uploadImage';
 import KaravanQRCard from '@/components/KaravanQRCard';
 import OnboardingModal from '@/components/OnboardingModal';
 import ConfettiCelebration from '@/components/ConfettiCelebration';
+import CityStickers from '@/components/CityStickers';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -30,106 +31,9 @@ export default function GunlukPage() {
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
 
-  useEffect(() => {
-    // onAuthStateChange fires INITIAL_SESSION immediately from localStorage
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setAuthChecking(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        showToast('Başarıyla giriş yapıldı!', "success");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            }
-          }
-        });
-        if (error) throw error;
-        showToast('Kayıt başarılı! Lütfen e-postanızı onaylayın.', "success");
-      }
-    } catch (error: any) {
-      showToast(error.message || 'Bir hata oluştu.', "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    showToast("Güvenli çıkış yapıldı.", "info");
-  };
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/sifre-yenile`,
-      });
-      if (error) throw error;
-      showToast('Şifre sıfırlama bağlantısı e-postanıza gönderildi.', 'success');
-      setForgotMode(false);
-      setForgotEmail('');
-    } catch (error: any) {
-      const msg = error.message || '';
-      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('too many')) {
-        showToast('Çok fazla istek gönderildi. Lütfen birkaç dakika bekleyip tekrar deneyin.', 'error');
-      } else {
-        showToast(msg || 'Bir hata oluştu.', 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== newPasswordConfirm) {
-      showToast('Şifreler eşleşmiyor.', 'error');
-      return;
-    }
-    if (newPassword.length < 6) {
-      showToast('Şifre en az 6 karakter olmalıdır.', 'error');
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      showToast('Şifreniz başarıyla güncellendi!', 'success');
-      setNewPassword('');
-      setNewPasswordConfirm('');
-      setShowPasswordChange(false);
-    } catch (error: any) {
-      showToast(error.message || 'Bir hata oluştu.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Active Tab for Modern Dashboard
+  const [activeTab, setActiveTab] = useState<'passport' | 'garage' | 'settings'>('passport');
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [bio, setBio] = useState('');
@@ -159,6 +63,17 @@ export default function GunlukPage() {
   const prevAchievementIds = useRef<Set<number> | null>(null);
 
   useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthChecking(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (session?.user?.id) {
       fetchProfile();
       fetchStats();
@@ -172,7 +87,7 @@ export default function GunlukPage() {
     if (!session?.user?.id) return;
     const uid = session.user.id;
     
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('friendships')
       .select('*, sender:user_id(id, full_name, avatar_url, caravan_type), receiver:friend_id(id, full_name, avatar_url, caravan_type)')
       .eq('status', 'accepted')
@@ -199,7 +114,7 @@ export default function GunlukPage() {
 
   const fetchProfile = async () => {
     if (!session?.user?.id) return;
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', session.user.id)
@@ -217,7 +132,6 @@ export default function GunlukPage() {
       setAvatarUrl(data.avatar_url || '');
       setXp(data.xp || 0);
       setShareLocation(data.share_location || false);
-      // Show onboarding for new users (no bio and no caravan_type set)
       if (!data.bio && !data.caravan_type && !localStorage.getItem('onboarding_done')) {
         setShowOnboarding(true);
       }
@@ -267,7 +181,6 @@ export default function GunlukPage() {
     const url = await uploadImage(file);
     if (url) {
       setAvatarUrl(url);
-      // Hemen veritabanına da kaydet
       const { error } = await supabase
         .from('profiles')
         .update({ avatar_url: url })
@@ -279,433 +192,456 @@ export default function GunlukPage() {
       } else {
         showToast('Hata: ' + error.message, 'error');
       }
-    } else {
-      showToast('Görsel yüklenemedi.', 'error');
     }
     setIsUploading(false);
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    if (!session?.user?.id) return;
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        bio,
-        caravan_type: caravanType,
-        username,
-        battery_capacity: batteryCapacity,
-        solar_panel: solarPanel,
-        water_tank: waterTank,
-        heating_system: heatingSystem,
-        avatar_url: avatarUrl,
-        share_location: shareLocation
-      })
-      .eq('id', session.user.id);
-      
-    if (error) {
-      showToast('Profil güncellenemedi: ' + error.message, "error");
-    } else {
-      showToast('Profil başarıyla güncellendi!', "success");
-      fetchProfile();
+
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        showToast('Başarıyla giriş yapıldı!', "success");
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } }
+        });
+        if (error) throw error;
+        showToast('Kayıt başarılı! Lütfen e-postanızı onaylayın.', "success");
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Bir hata oluştu.', "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    showToast("Güvenli çıkış yapıldı.", "info");
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          bio,
+          caravan_type: caravanType,
+          username,
+          battery_capacity: batteryCapacity,
+          solar_panel: solarPanel,
+          water_tank: waterTank,
+          heating_system: heatingSystem,
+          share_location: shareLocation,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+      showToast('Profil ve karavan bilgileri güncellendi!', 'success');
+      fetchProfile();
+    } catch (err: any) {
+      showToast('Hata: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (authChecking) {
     return (
-      <div className={styles.container} style={{flexDirection: 'column', gap: '20px'}}>
-        <div className="pulse-dot"></div>
-        <p style={{opacity: 0.6, fontSize: '0.9rem'}}>Yol durumu kontrol ediliyor...</p>
+      <div className={styles.container}>
+        <div className={styles.loadingBox}>
+          <div className="pulse-dot"></div>
+          <p>Karavan Günlüğü Yükleniyor...</p>
+        </div>
       </div>
     );
   }
 
-  if (session) {
+  // Auth Form (Giriş / Kayıt)
+  if (!session) {
     return (
-      <div className={styles.container} ref={scrollRef} key={session.user.id}>
-        {celebrationAchievement && (
-          <ConfettiCelebration
-            achievement={celebrationAchievement}
-            onClose={() => setCelebrationAchievement(null)}
-          />
-        )}
-        {showOnboarding && (
-          <OnboardingModal
-            userId={session.user.id}
-            onDone={() => {
-              setShowOnboarding(false);
-              localStorage.setItem('onboarding_done', '1');
-              fetchProfile();
-            }}
-          />
-        )}
-        <div className={styles.profileCard + " glass-card reveal visible"}>
-          <div className={styles.profileHeader}>
-            <div className={styles.avatarWrapper}>
-              <div className={styles.avatarLarge}>
-                {avatarUrl ? (
-                  <Image fill src={avatarUrl} alt="Profil" style={{ objectFit: 'cover', borderRadius: '50%' }} sizes="100px" />
-                ) : (
-                  (profile?.full_name || profile?.username || 'K').charAt(0).toUpperCase()
-                )}
-                <label className={styles.avatarOverlay}>
-                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden disabled={isUploading} />
-                  <IconCamera size={24} color="white" />
-                  <span>{isUploading ? '...' : 'Değiştir'}</span>
-                </label>
-              </div>
-            </div>
-            <div className={styles.profileInfo}>
-              <h2>{profile?.full_name || 'Komşu'}</h2>
-              <p className={styles.emailLabel}>{session.user.email}</p>
-              {profile?.is_verified && <span className="badge badge-verified">Onaylı Üye ✓</span>}
-            </div>
-          </div>
-          
-          <div className={styles.gamificationSection}>
-            <div className={styles.levelInfo}>
-              <div className={styles.levelBadge}>
-                <span>Seviye</span>
-                <strong>{Math.floor(xp / 100) + 1}</strong>
-              </div>
-              <div className={styles.progressContainer}>
-                <div className={styles.progressHeader}>
-                  <span>Karavancı Tecrübesi ({xp} XP)</span>
-                  <span>%{xp % 100}</span>
-                </div>
-                <div className={styles.progressBar}>
-                  <div 
-                    className={styles.progressFill} 
-                    style={{ width: `${xp % 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.badgesGrid}>
-              {userAchievements.map((ua: any) => (
-                <div key={ua.achievement_id} className={`${styles.badgeItem} ${styles.earned}`}>
-                  <div className={styles.badgeIcon}>{ua.achievements?.icon || '🏆'}</div>
-                  <span>{ua.achievements?.title}</span>
-                </div>
-              ))}
-              {userAchievements.length === 0 && (
-                <p className={styles.noBadgeText}>Henüz bir rozet kazanılmadı. Yola çık ve paylaş!</p>
-              )}
-            </div>
+      <div className={styles.container} ref={scrollRef}>
+        <div className={styles.authCard + " glass-card"}>
+          <div className={styles.authHeader}>
+            <span style={{ fontSize: '2.5rem' }}>🚐</span>
+            <h2>{isLogin ? 'Karavan Günlüğüne Giriş' : 'Aramıza Katıl, Komşu!'}</h2>
+            <p>{isLogin ? 'Yolculuk anıların, rotaların ve komşuların seni bekliyor.' : 'Türkiye’nin en samimi karavancı topluluğunda yerini al.'}</p>
           </div>
 
-          <div className={styles.profileStats}>
-            <div className={styles.statBox}>
-              <IconMap size={24} color="var(--sunset-orange)" />
-              <strong>{routesCount}</strong>
-              <span>Rota</span>
-            </div>
-            <div className={styles.statBox} onClick={() => setShowFriendsModal(true)} style={{cursor: 'pointer'}}>
-              <IconUser size={24} color="var(--forest-green)" />
-              <strong>{friendsCount}</strong>
-              <span>Arkadaş</span>
-            </div>
-            <div className={styles.statBox}>
-              <IconCamp size={24} color="var(--forest-green)" />
-              <strong>{postsCount}</strong>
-              <span>Manzara</span>
-            </div>
-          </div>
-
-          <form onSubmit={handleUpdateProfile} className={styles.form}>
-            <div className={styles.sectionTitle}>
-              <IconUser size={18} />
-              <h3>Kişisel Bilgiler</h3>
-            </div>
-            
-            <div className={styles.inputGrid}>
-              <div className={styles.inputGroup}>
-                <label>Kullanıcı Adı</label>
-                <input 
-                  type="text" 
-                  placeholder="@gezginkomsu" 
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>Karavan Tipi</label>
-                <select value={caravanType} onChange={(e) => setCaravanType(e.target.value)}>
-                  <option value="">Seçiniz...</option>
-                  <option value="Motokaravan">Motokaravan</option>
-                  <option value="Çekme Karavan">Çekme Karavan</option>
-                  <option value="Campervan">Campervan</option>
-                  <option value="Diğer">Diğer</option>
-                </select>
-              </div>
-              <div className={styles.inputGroup}>
-                <label>📍 Konum Paylaşımı</label>
-                <div className={styles.toggleRow} onClick={() => setShareLocation(!shareLocation)}>
-                  <div className={`${styles.toggle} ${shareLocation ? styles.toggleActive : ''}`}></div>
-                  <span>{shareLocation ? 'Yakındaki komşular beni görebilir' : 'Konumum gizli'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.sectionTitle} style={{marginTop: '20px'}}>
-              <IconCamp size={18} />
-              <h3>Karavan Garajı</h3>
-            </div>
-            
-            <div className={styles.garageGrid}>
-              <div className={styles.inputGroup}>
-                <label>🔋 Akü</label>
-                <input type="text" placeholder="200Ah Lityum" value={batteryCapacity} onChange={(e) => setBatteryCapacity(e.target.value)} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>☀️ Güneş</label>
-                <input type="text" placeholder="400W Monokristal" value={solarPanel} onChange={(e) => setSolarPanel(e.target.value)} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>💧 Su</label>
-                <input type="text" placeholder="150L Temiz" value={waterTank} onChange={(e) => setWaterTank(e.target.value)} />
-              </div>
-              <div className={styles.inputGroup}>
-                <label>🔥 Isıtma</label>
-                <input type="text" placeholder="Dizel Isıtıcı" value={heatingSystem} onChange={(e) => setHeatingSystem(e.target.value)} />
-              </div>
-            </div>
-
-            <div className={styles.inputGroup} style={{marginTop: '15px'}}>
-              <label>Hakkımda</label>
-              <textarea 
-                placeholder="Yolculuk hikayeni paylaş..." 
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-              />
-            </div>
-            
-            <div className={styles.profileActions}>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? 'Güncelleniyor...' : 'Profili Kaydet'}
-              </button>
-              <button type="button" onClick={() => setShowQRCard(true)} className="btn-secondary">
-                🚐 Karavan Kartım
-              </button>
-              <button type="button" onClick={handleLogout} className="btn-ghost">
-                Oturumu Kapat
-              </button>
-            </div>
-          </form>
-
-          <div style={{marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px'}}>
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{width: '100%', fontSize: '0.85rem'}}
-              onClick={() => setShowPasswordChange(!showPasswordChange)}
-            >
-              {showPasswordChange ? '↑ Şifre Değiştirmeyi Kapat' : '🔒 Şifre Değiştir'}
-            </button>
-
-            {showPasswordChange && (
-              <form onSubmit={handleChangePassword} style={{marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px'}}>
-                <div className={styles.inputGroup}>
-                  <label>Yeni Şifre</label>
-                  <div style={{position:'relative'}}>
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      placeholder="En az 6 karakter"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      style={{paddingRight:'40px', width:'100%', boxSizing:'border-box'}}
-                    />
-                    <button type="button" onClick={() => setShowNewPassword(v => !v)} style={{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',opacity:0.5,padding:'4px',color:'inherit'}}>
-                      {showNewPassword
-                        ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                        : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
-                  </div>
-                </div>
-                <div className={styles.inputGroup}>
-                  <label>Yeni Şifre (Tekrar)</label>
-                  <div style={{position:'relative'}}>
-                    <input
-                      type={showNewPasswordConfirm ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={newPasswordConfirm}
-                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                      required
-                      minLength={6}
-                      style={{paddingRight:'40px', width:'100%', boxSizing:'border-box'}}
-                    />
-                    <button type="button" onClick={() => setShowNewPasswordConfirm(v => !v)} style={{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',opacity:0.5,padding:'4px',color:'inherit'}}>
-                      {showNewPasswordConfirm
-                        ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                        : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      }
-                    </button>
-                  </div>
-                </div>
-                <button type="submit" className="btn-primary" disabled={loading}>
-                  {loading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-
-        {showFriendsModal && (
-          <div className={styles.modalOverlay} onClick={() => setShowFriendsModal(false)}>
-            <div className={styles.friendsModal + " glass-card"} onClick={e => e.stopPropagation()}>
-              <div className={styles.modalHeader}>
-                <h3>Kampçı Arkadaşlarım</h3>
-                <button onClick={() => setShowFriendsModal(false)}>✕</button>
-              </div>
-              <div className={styles.modalBody}>
-                {friendsList.length === 0 ? (
-                  <p className={styles.emptyListText}>Henüz bir arkadaşın yok. Telsizden yeni komşular bulabilirsin! 🚐</p>
-                ) : (
-                  friendsList.map(friend => (
-                    <Link href={`/profil/${friend.id}`} key={friend.id} className={styles.friendRow}>
-                      <div className={styles.friendAvatar}>
-                        {friend.avatar_url ? (
-                          <Image src={friend.avatar_url} fill alt={friend.full_name} style={{objectFit: 'cover', borderRadius: '50%'}} />
-                        ) : (
-                          friend.full_name?.charAt(0) || 'K'
-                        )}
-                      </div>
-                      <div className={styles.friendInfo}>
-                        <span className={styles.friendName}>{friend.full_name}</span>
-                        <span className={styles.friendType}>{friend.caravan_type || 'Gezgin'}</span>
-                      </div>
-                      <div className={styles.viewProfile}>Gör →</div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showQRCard && profile && session?.user && (
-          <KaravanQRCard
-            profile={profile}
-            userId={session.user.id}
-            onClose={() => setShowQRCard(false)}
-          />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.container} ref={scrollRef}>
-      <div className={styles.authCard + " glass-card reveal-scale visible"}>
-        <div className={styles.tabs}>
-          <button 
-            className={`${styles.tabButton} ${isLogin ? styles.activeTab : ''}`} 
-            onClick={() => setIsLogin(true)}
-          >
-            Giriş Yap
-          </button>
-          <button 
-            className={`${styles.tabButton} ${!isLogin ? styles.activeTab : ''}`} 
-            onClick={() => setIsLogin(false)}
-          >
-            Kayıt Ol
-          </button>
-        </div>
-
-        <div className={styles.authHeader}>
-          <h2>{isLogin ? 'Hoş Geldin Komşu!' : 'Aramıza Katıl'}</h2>
-          <p>
-            {isLogin 
-              ? 'Yol arkadaşların seni bekliyor. Hemen oturum aç.' 
-              : 'Karavan günlüğünü tutmaya başlamak için hesap oluştur.'}
-          </p>
-        </div>
-
-        {forgotMode ? (
-          <form className={styles.form} onSubmit={handleForgotPassword}>
-            <div className={styles.inputGroup}>
-              <label>E-posta Adresi</label>
-              <input
-                type="email"
-                placeholder="komsu@karavan.com"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
-              {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
-            </button>
-            <button type="button" className="btn-ghost" style={{marginTop: '8px', width: '100%'}} onClick={() => setForgotMode(false)}>
-              Geri Dön
-            </button>
-          </form>
-        ) : (
-          <form className={styles.form} onSubmit={handleAuth}>
+          <form onSubmit={handleAuth} className={styles.authForm}>
             {!isLogin && (
               <div className={styles.inputGroup}>
                 <label>Ad Soyad</label>
                 <input
                   type="text"
-                  placeholder="Örn: Ahmet Yılmaz"
+                  required
+                  placeholder="Ahmet Yılmaz"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
+                  onChange={e => setFullName(e.target.value)}
                 />
               </div>
             )}
+
             <div className={styles.inputGroup}>
               <label>E-posta Adresi</label>
               <input
                 type="email"
-                placeholder="komsu@karavan.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
                 required
+                placeholder="karavanci@ornek.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
               />
             </div>
+
             <div className={styles.inputGroup}>
               <label>Şifre</label>
-              <div style={{position:'relative'}}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  style={{paddingRight:'40px', width:'100%', boxSizing:'border-box'}}
-                />
-                <button type="button" onClick={() => setShowPassword(v => !v)} style={{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',opacity:0.5,padding:'4px',color:'inherit'}}>
-                  {showPassword
-                    ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  }
-                </button>
-              </div>
-              {isLogin && (
-                <button
-                  type="button"
-                  style={{background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sunset-orange)', fontSize: '0.8rem', textAlign: 'right', padding: '4px 0', width: '100%'}}
-                  onClick={() => { setForgotMode(true); setForgotEmail(email); }}
-                >
-                  Şifremi Unuttum
-                </button>
-              )}
+              <input
+                type="password"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
             </div>
 
-            <button type="submit" className="btn-primary" style={{marginTop: '10px', width: '100%'}} disabled={loading}>
-              {loading ? 'Bekleniyor...' : (isLogin ? 'Yola Çık' : 'Hesabı Oluştur')}
+            <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={loading}>
+              {loading ? 'İşleniyor...' : (isLogin ? 'Giriş Yap' : 'Kayıt Ol')}
             </button>
           </form>
-        )}
+
+          <div className={styles.authFooter}>
+            <button
+              type="button"
+              className={styles.switchAuthBtn}
+              onClick={() => setIsLogin(!isLogin)}
+            >
+              {isLogin ? 'Hesabın yok mu? Kayıt Ol' : 'Zaten hesabın var mı? Giriş Yap'}
+            </button>
+          </div>
+        </div>
       </div>
+    );
+  }
+
+  const level = Math.floor(xp / 100) + 1;
+  const progressPercent = xp % 100;
+
+  return (
+    <div className={styles.container} ref={scrollRef}>
+      {/* ─── Apple Wallet Stili Dijital Karavan Pasaportu ─── */}
+      <section className={styles.passportHero}>
+        <div className={styles.passportCard}>
+          <div className={styles.passportHeader}>
+            <div className={styles.passportBrand}>
+              <span>🇹🇷</span>
+              <div>
+                <h4>T.C. KARAVAN PASAPORTU</h4>
+                <small>REPUBLIC OF CARAVAN COMMUNITY</small>
+              </div>
+            </div>
+            <div className={styles.passportLevelBadge}>
+              LVL {level}
+            </div>
+          </div>
+
+          <div className={styles.passportBody}>
+            <div className={styles.passportAvatarCol}>
+              <div className={styles.passportAvatarWrap}>
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt="Avatar" width={84} height={84} className={styles.passportAvatar} />
+                ) : (
+                  <div className={styles.passportAvatarFallback}>
+                    {(profile?.full_name || 'K').charAt(0)}
+                  </div>
+                )}
+                <label className={styles.cameraIconBtn}>
+                  <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden disabled={isUploading} />
+                  <IconCamera size={14} color="#fff" />
+                </label>
+              </div>
+              <span className={styles.passportCallsign}>
+                {username ? `@${username}` : 'Gezgin'}
+              </span>
+            </div>
+
+            <div className={styles.passportDetailsCol}>
+              <div className={styles.passportRow}>
+                <span className={styles.fieldLabel}>KAPTAN</span>
+                <span className={styles.fieldVal}>{profile?.full_name || 'Karavan Komşusu'}</span>
+              </div>
+              <div className={styles.passportRow}>
+                <span className={styles.fieldLabel}>ARAÇ TİPİ</span>
+                <span className={styles.fieldVal}>{caravanType || 'Belirtilmedi'}</span>
+              </div>
+              <div className={styles.passportRowGrid}>
+                <div>
+                  <span className={styles.fieldLabel}>AKÜ</span>
+                  <span className={styles.fieldVal}>{batteryCapacity || '—'}</span>
+                </div>
+                <div>
+                  <span className={styles.fieldLabel}>SOLAR</span>
+                  <span className={styles.fieldVal}>{solarPanel || '—'}</span>
+                </div>
+                <div>
+                  <span className={styles.fieldLabel}>TEMİZ SU</span>
+                  <span className={styles.fieldVal}>{waterTank || '—'}</span>
+                </div>
+                <div>
+                  <span className={styles.fieldLabel}>ISITICI</span>
+                  <span className={styles.fieldVal}>{heatingSystem || '—'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.passportFooter}>
+            <div className={styles.passportXpBar}>
+              <div className={styles.xpLabelRow}>
+                <span>Tecrübe: {xp} XP</span>
+                <span>Sonraki Seviye: %{progressPercent}</span>
+              </div>
+              <div className={styles.xpTrack}>
+                <div className={styles.xpFill} style={{ width: `${progressPercent}%` }}></div>
+              </div>
+            </div>
+
+            <div className={styles.passportActions}>
+              <button className={styles.qrTriggerBtn} onClick={() => setShowQRCard(true)}>
+                📱 QR Kimliğim
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Dashboard İstatistik Sayaçları ─── */}
+      <div className={styles.statsRow}>
+        <div className={styles.statBox}>
+          <IconMap size={22} color="var(--sunset-orange, #FF8C42)" />
+          <strong>{routesCount}</strong>
+          <span>Kayıtlı Rota</span>
+        </div>
+        <div className={styles.statBox} onClick={() => setShowFriendsModal(true)} style={{ cursor: 'pointer' }}>
+          <IconUser size={22} color="var(--forest-green, #2D5A27)" />
+          <strong>{friendsCount}</strong>
+          <span>Yol Komşusu</span>
+        </div>
+        <div className={styles.statBox}>
+          <IconCamp size={22} color="#4A90E2" />
+          <strong>{postsCount}</strong>
+          <span>Paylaşılan Manzara</span>
+        </div>
+      </div>
+
+      {/* ─── Modern Tab Navigation ─── */}
+      <div className={styles.tabNav}>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'passport' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('passport')}
+        >
+          🪪 Rozetler & Şehirler
+        </button>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'garage' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('garage')}
+        >
+          🚐 Karavan Garajı & Donanım
+        </button>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'settings' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          ⚙️ Profil & Ayarlar
+        </button>
+      </div>
+
+      {/* ─── TAB 1: Rozetler & Şehir Çıkartmaları ─── */}
+      {activeTab === 'passport' && (
+        <div className={styles.tabContent}>
+          <div className={styles.panelSection + " glass-card"}>
+            <h3>🏆 Kazanılan Rozetler ({userAchievements.length})</h3>
+            <div className={styles.badgesGrid}>
+              {userAchievements.map((ua: any) => (
+                <div key={ua.achievement_id} className={styles.badgeItem}>
+                  <div className={styles.badgeIcon}>{ua.achievements?.icon || '🏆'}</div>
+                  <span className={styles.badgeTitle}>{ua.achievements?.title}</span>
+                  <small className={styles.badgeDesc}>{ua.achievements?.description}</small>
+                </div>
+              ))}
+              {userAchievements.length === 0 && (
+                <p className={styles.noBadgeNotice}>
+                  Henüz bir rozet kazanmadın. Rota çizerek, check-in yaparak ve telsizde selam vererek rozetler kazan!
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.panelSection + " glass-card"}>
+            <CityStickers userId={session.user.id} />
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 2: Karavan Garajı Formu ─── */}
+      {activeTab === 'garage' && (
+        <form onSubmit={handleUpdateProfile} className={styles.tabContent}>
+          <div className={styles.panelSection + " glass-card"}>
+            <h3>🚐 Karavan Donanım Özellikleri</h3>
+            <p className={styles.sectionSubtitle}>
+              Karavanının teknik kapasitesi, yoldaki komşularının sana uygun tavsiyeler vermesini sağlar.
+            </p>
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label>Karavan Türü</label>
+                <select value={caravanType} onChange={e => setCaravanType(e.target.value)}>
+                  <option value="">Seçiniz...</option>
+                  <option value="Motokaravan">Motokaravan (Alkovenli / Entegre)</option>
+                  <option value="Campervan">Campervan (Panelvan Dönüşüm)</option>
+                  <option value="Çekme Karavan">Çekme Karavan (750kg altı / üstü)</option>
+                  <option value="Off-road / Teardrop">Off-road / Teardrop Karavan</option>
+                  <option value="Araç Üstü Çadır">Araç Üstü Çadır / Kamp Donanımlı</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>🔋 Yaşam Aküsü Kapasitesi</label>
+                <input
+                  type="text"
+                  placeholder="Örn: 200Ah LiFePO4 Lityum"
+                  value={batteryCapacity}
+                  onChange={e => setBatteryCapacity(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>☀️ Güneş Paneli Gücü</label>
+                <input
+                  type="text"
+                  placeholder="Örn: 410W Monokristal Half-Cut"
+                  value={solarPanel}
+                  onChange={e => setSolarPanel(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>💧 Temiz Su Deposu</label>
+                <input
+                  type="text"
+                  placeholder="Örn: 150 Litre Poliüretan"
+                  value={waterTank}
+                  onChange={e => setWaterTank(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>🔥 Ortam Isıtıcısı</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Webasto Air Top / Dizel 2kW / Truma Combi"
+                  value={heatingSystem}
+                  onChange={e => setHeatingSystem(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button type="submit" className="btn-primary" style={{ marginTop: '16px' }} disabled={loading}>
+              {loading ? 'Kaydediliyor...' : 'Garaj Bilgilerini Güncelle'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ─── TAB 3: Profil & Ayarlar ─── */}
+      {activeTab === 'settings' && (
+        <form onSubmit={handleUpdateProfile} className={styles.tabContent}>
+          <div className={styles.panelSection + " glass-card"}>
+            <h3>👤 Kişisel Bilgiler & Gizlilik</h3>
+
+            <div className={styles.formGrid}>
+              <div className={styles.formGroup}>
+                <label>Kullanıcı Adı (Telsiz Çağrı Kodu)</label>
+                <input
+                  type="text"
+                  placeholder="@kaptanali"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>E-posta (Salt Okunur)</label>
+                <input type="email" value={session.user.email} disabled />
+              </div>
+
+              <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                <label>Hakkımda & Karavan Hikayem</label>
+                <textarea
+                  rows={3}
+                  placeholder="Yolculukların, rotaların, karavanla ilgili hayallerin..."
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                <label>📍 Canlı Konum Paylaşımı</label>
+                <div
+                  className={styles.toggleRow}
+                  onClick={() => setShareLocation(!shareLocation)}
+                >
+                  <div className={`${styles.toggle} ${shareLocation ? styles.toggleActive : ''}`}></div>
+                  <span>{shareLocation ? 'Aktif: Yakındaki karavancı komşular beni radarda görebilir' : 'Gizli: Konumum diğer kullanıcılara kapalı'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.settingsBtnRow}>
+              <button type="submit" className="btn-primary" disabled={loading}>
+                {loading ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
+              </button>
+
+              <button type="button" className="btn-secondary" onClick={handleLogout}>
+                Güvenli Çıkış Yap
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* Modallar */}
+      {showQRCard && profile && (
+        <KaravanQRCard profile={profile} userId={session.user.id} onClose={() => setShowQRCard(false)} />
+      )}
+
+      {showOnboarding && session?.user && (
+        <OnboardingModal
+          userId={session.user.id}
+          onDone={() => {
+            setShowOnboarding(false);
+            localStorage.setItem('onboarding_done', 'true');
+            fetchProfile();
+          }}
+        />
+      )}
+
+      {celebrationAchievement && (
+        <ConfettiCelebration
+          achievement={celebrationAchievement}
+          onClose={() => setCelebrationAchievement(null)}
+        />
+      )}
     </div>
   );
 }

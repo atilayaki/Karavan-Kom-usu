@@ -7,48 +7,63 @@ import { usePathname } from 'next/navigation';
 import styles from './Navbar.module.css';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from './ThemeToggle';
+import QuickSearchModal from './QuickSearchModal';
 import { supabase } from '@/lib/supabase';
 
 const NAV_CATEGORIES = [
   {
     label: 'Gezgin',
     items: [
-      { href: '/manzara', label: 'Manzara',        icon: '📸' },
-      { href: '/kesfet',  label: 'Keşfet & Rota', icon: '🗺️' },
+      { href: '/kesfet',  label: 'Keşfet & Harita', icon: '🗺️' },
+      { href: '/rota',    label: 'Rota Planlayıcı', icon: '🛣️' },
+      { href: '/manzara', label: 'Manzara & Rotalar', icon: '📸' },
     ],
   },
   {
     label: 'Topluluk',
     items: [
-      { href: '/telsiz',      label: 'Telsiz',      icon: '📻' },
-      { href: '/kamp-atesi',  label: 'Kamp Ateşi',  icon: '🔥' },
-      { href: '/mesajlar',    label: 'Mesajlar',    icon: '💬' },
-      { href: '/etkinlikler', label: 'Etkinlikler', icon: '📅' },
+      { href: '/telsiz',      label: 'Telsiz & SOS',  icon: '📻' },
+      { href: '/kamp-atesi',  label: 'Kamp Ateşi',    icon: '🔥' },
+      { href: '/mesajlar',    label: 'Mesajlar',      icon: '💬' },
+      { href: '/etkinlikler', label: 'Etkinlikler',   icon: '📅' },
     ],
   },
   {
-    label: 'Araçlar',
+    label: 'Araçlar & Rehber',
     items: [
-      { href: '/pazaryeri',  label: 'Pazaryeri',  icon: '🛒' },
-      { href: '/bakim',      label: 'Bakım',      icon: '🔧' },
-      { href: '/rehber',     label: 'Rehber',     icon: '📖' },
-      { href: '/wrapped',    label: 'Yıl Özeti',  icon: '🏕️' },
-      { href: '/hakkimizda', label: 'Hakkımızda', icon: '🧭' },
+      { href: '/pazaryeri',  label: 'Pazaryeri',     icon: '🛒' },
+      { href: '/bakim',      label: 'Bakım Takvimi', icon: '🔧' },
+      { href: '/rehber',     label: 'Karavan Rehberi', icon: '📖' },
+      { href: '/wrapped',    label: 'Yıl Özeti',     icon: '🏕️' },
+      { href: '/hakkimizda', label: 'Hakkımızda',    icon: '🧭' },
     ],
   },
 ];
 
-// Flat list for desktop dropdown
 const ALL_ITEMS = NAV_CATEGORIES.flatMap(c => c.items);
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => { setOpen(false); }, [pathname]);
+
+  // Global Ctrl+K / Cmd+K shortcut listener
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -80,10 +95,8 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    // getSession reads from localStorage — instant, no network round-trip
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        // Show user icon immediately, load avatar in background
         setUser({ id: session.user.id, avatarUrl: null });
         setAuthReady(true);
         fetchAvatar(session.user.id).then(avatarUrl => {
@@ -153,7 +166,7 @@ export default function Navbar() {
 
         <Link href="/gunluk" className={styles.drawerProfile} onClick={() => setOpen(false)}>
           <span>⚙️</span>
-          <span>Günlüğüm & Ayarlar</span>
+          <span>Günlüğüm & Karavan Pasaportum</span>
           <span className={styles.drawerArrow}>→</span>
         </Link>
       </div>
@@ -165,54 +178,97 @@ export default function Navbar() {
       <nav className={styles.navbar}>
         <div className={styles.container}>
 
-          {/* Hamburger + desktop dropdown */}
-          <div className={styles.menuWrapper} ref={wrapperRef}>
-            <button
-              className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ''}`}
-              onClick={() => setOpen(v => !v)}
-              aria-label="Menüyü aç"
-              aria-expanded={open}
-              type="button"
+          {/* Sol Kısım: Menü Butonu & Logo */}
+          <div className={styles.leftSection}>
+            <div className={styles.menuWrapper} ref={wrapperRef}>
+              <button
+                className={`${styles.menuBtn} ${open ? styles.menuBtnOpen : ''}`}
+                onClick={() => setOpen(v => !v)}
+                aria-label="Menüyü aç"
+                aria-expanded={open}
+                type="button"
+              >
+                <span></span><span></span><span></span>
+              </button>
+
+              {open && (
+                <div className={styles.dropdown + ' glass-card'}>
+                  {ALL_ITEMS.map(item => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={styles.dropdownItem}
+                      onClick={() => setOpen(false)}
+                    >
+                      <span className={styles.dropdownIcon}>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Logo */}
+            <Link
+              href="/"
+              className={styles.logo}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <span></span><span></span><span></span>
+              <Logo className={styles.logoImage} />
+              <div className={styles.logoTextWrap}>
+                <span className={styles.logoText}>Karavan Komşusu</span>
+                <span className={styles.logoBadge}>PRO</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Orta Kısım: Spotlight Arama Çubuğu */}
+          <div className={styles.centerSection}>
+            <button
+              type="button"
+              className={styles.searchBarBtn}
+              onClick={() => setSearchOpen(true)}
+              aria-label="Hızlı Arama"
+            >
+              <span className={styles.searchBarIcon}>🔍</span>
+              <span className={styles.searchBarPlaceholder}>Mekan, rota, usta veya ekipman ara...</span>
+              <kbd className={styles.searchKeyHint}>⌘K</kbd>
+            </button>
+          </div>
+
+          {/* Sağ Kısım: SOS, Bildirim, Tema, Profil */}
+          <div className={styles.actions}>
+            {/* Hızlı SOS Butonu */}
+            <Link
+              href="/telsiz?channel=Acil%20Durum"
+              className={styles.sosQuickBtn}
+              title="Acil Durum SOS Telsizi"
+            >
+              <span className={styles.sosDot}></span>
+              <span>SOS</span>
+            </Link>
+
+            {/* Arama Butonu (Mobilde) */}
+            <button
+              type="button"
+              className={styles.mobileSearchIconBtn}
+              onClick={() => setSearchOpen(true)}
+              aria-label="Ara"
+            >
+              🔍
             </button>
 
-            {open && (
-              <div className={styles.dropdown + ' glass-card'}>
-                {ALL_ITEMS.map(item => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={styles.dropdownItem}
-                    onClick={() => setOpen(false)}
-                  >
-                    <span className={styles.dropdownIcon}>{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+            {/* Tema Değiştirici */}
+            <div className={styles.themeToggleWrap}>
+              <ThemeToggle />
+            </div>
 
-          {/* Logo */}
-          <Link
-            href="/"
-            className={styles.logo}
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          >
-            <Logo className={styles.logoImage} />
-            <span className={styles.logoText}>Karavan Komşusu</span>
-          </Link>
+            {/* Bildirim Zili */}
+            <div className={styles.bellWrap}>
+              <NotificationBell align="right" />
+            </div>
 
-          {/* Right actions */}
-          {/* Desktop: sol üst */}
-          <div className={styles.bellLeft}>
-            <NotificationBell align="left" />
-          </div>
-
-          <div className={styles.actions}>
-            {/* Mobile: sağ üst */}
-            <div className={styles.bellMobile}><NotificationBell align="right" /></div>
+            {/* Profil Avatarı */}
             <Link href="/gunluk" className={`${styles.profileBtn} ${!authReady ? styles.profileBtnLoading : ''}`} aria-label="Günlüğüm">
               {!authReady
                 ? null
@@ -221,8 +277,12 @@ export default function Navbar() {
                   : '👤'}
             </Link>
           </div>
+
         </div>
       </nav>
+
+      {/* Global Quick Search Modal */}
+      <QuickSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* Portal drawer — rendered directly to body to escape nav stacking context */}
       {mounted && open && createPortal(drawer, document.body)}

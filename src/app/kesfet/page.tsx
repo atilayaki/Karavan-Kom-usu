@@ -28,8 +28,6 @@ const MapWithNoSSR = dynamic(() => import('@/components/Map'), {
   )
 });
 
-const CATEGORIES = ['Sakin Köşe', 'Yol Yardımcısı'];
-
 interface SpotRating { avg: number; count: number; }
 
 const EMPTY_NEW_SPOT = {
@@ -47,9 +45,19 @@ export default function KesfetPage() {
   const [filteredSpots, setFilteredSpots] = useState<Spot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Mobile View Switcher: 'map' or 'list'
+  const [mobileView, setMobileView] = useState<'map' | 'list'>('map');
+
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
-  const [activeFilter, setActiveFilter] = useState('Hepsi');
+  const [activeCategory, setActiveCategory] = useState('Hepsi');
+  
+  // Amenity filters
+  const [filterWater, setFilterWater] = useState(false);
+  const [filterElectricity, setFilterElectricity] = useState(false);
+  const [filterWc, setFilterWc] = useState(false);
+  const [filterPet, setFilterPet] = useState(false);
+
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [weather, setWeather] = useState<WeatherCurrent | null>(null);
   const [spotRatings, setSpotRatings] = useState<Record<number, SpotRating>>({});
@@ -147,8 +155,8 @@ export default function KesfetPage() {
 
   useEffect(() => {
     let result = [...spots];
-    if (activeFilter !== 'Hepsi' && activeFilter !== 'Yakınımda') {
-      result = result.filter(s => s.category === activeFilter);
+    if (activeCategory !== 'Hepsi' && activeCategory !== 'Yakınımda') {
+      result = result.filter(s => s.category === activeCategory);
     }
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
@@ -157,14 +165,28 @@ export default function KesfetPage() {
         (s.address && s.address.toLowerCase().includes(q))
       );
     }
-    if (activeFilter === 'Yakınımda' && userLocation) {
+    // Amenity filters
+    if (filterWater) {
+      result = result.filter(s => s.attributes?.water);
+    }
+    if (filterElectricity) {
+      result = result.filter(s => s.attributes?.electricity);
+    }
+    if (filterWc) {
+      result = result.filter(s => s.attributes?.wc);
+    }
+    if (filterPet) {
+      result = result.filter(s => s.attributes?.pet_friendly);
+    }
+
+    if (activeCategory === 'Yakınımda' && userLocation) {
       result = result.sort((a, b) =>
         calculateDistance(userLocation.lat, userLocation.lng, a.lat ?? 0, a.lng ?? 0) -
         calculateDistance(userLocation.lat, userLocation.lng, b.lat ?? 0, b.lng ?? 0)
       );
     }
     setFilteredSpots(result);
-  }, [debouncedSearch, activeFilter, spots, userLocation]);
+  }, [debouncedSearch, activeCategory, filterWater, filterElectricity, filterWc, filterPet, spots, userLocation]);
 
   useEffect(() => {
     if (!selectedSpot) return;
@@ -175,7 +197,6 @@ export default function KesfetPage() {
       .then(({ count }) => setCheckinCounts(c => ({ ...c, [selectedSpot.id]: count || 0 })));
   }, [selectedSpot]);
 
-  // Weather: use newer open-meteo `current` API for more fields
   useEffect(() => {
     if (!selectedSpot) return;
     const controller = new AbortController();
@@ -216,7 +237,6 @@ export default function KesfetPage() {
     return 'Fırtınalı';
   };
 
-  // Notes matched by location_name OR proximity (≤ 1 km)
   const spotNotes = selectedSpot
     ? notes.filter(n => {
         if (n.location_name === selectedSpot.title) return true;
@@ -228,7 +248,7 @@ export default function KesfetPage() {
     : [];
 
   const handleNearMe = () => {
-    if (activeFilter === 'Yakınımda') { setActiveFilter('Hepsi'); return; }
+    if (activeCategory === 'Yakınımda') { setActiveCategory('Hepsi'); return; }
     setIsLocating(true);
     if (!('geolocation' in navigator)) {
       showToast("Tarayıcınız konumu desteklemiyor.", "error");
@@ -238,7 +258,7 @@ export default function KesfetPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setActiveFilter('Yakınımda');
+        setActiveCategory('Yakınımda');
         setIsLocating(false);
         showToast("Konumunuz tespit edildi.", "success");
       },
@@ -251,95 +271,52 @@ export default function KesfetPage() {
 
   const handleMapClick = (lat: number, lng: number) => {
     if (isPickingSpotLocation) {
-      setNewSpot(s => ({ ...s, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
+      setNewSpot(prev => ({ ...prev, lat: lat.toFixed(6), lng: lng.toFixed(6) }));
       setIsPickingSpotLocation(false);
       setIsAddSpotOpen(true);
-      showToast("Konum seçildi!", "success");
+      showToast(`Konum seçildi: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, "success");
       return;
     }
+
     if (!drawMode) return;
     if (!draftRoute.start) {
       setDraftRoute({ start: [lat, lng], end: null });
-      showToast("Başlangıç noktası seçildi, bitişi seçin.", "info");
+      showToast("Başlangıç noktası seçildi. Şimdi varış noktasına tıkla.", "info");
     } else if (!draftRoute.end) {
-      setDraftRoute({ start: draftRoute.start, end: [lat, lng] });
+      setDraftRoute(prev => ({ ...prev, end: [lat, lng] }));
+      showToast("Bitiş noktası seçildi! Rotanı kaydedebilirsin.", "success");
       setIsRouteModalOpen(true);
-      setDrawMode(false);
     }
-  };
-
-  const handleShareRoute = async () => {
-    if (!user) return showToast('Lütfen önce giriş yapın.', 'warning');
-    if (!draftRoute.start || !draftRoute.end) return;
-    setIsSubmitting(true);
-    const lineWkt = `LINESTRING(${draftRoute.start[1]} ${draftRoute.start[0]}, ${draftRoute.end[1]} ${draftRoute.end[0]})`;
-    const { error } = await supabase.from('routes').insert([{
-      user_id: user.id, title: newRoute.title, description: newRoute.desc,
-      start_location_name: newRoute.startName, end_location_name: newRoute.endName, path: lineWkt,
-    }]);
-    if (!error) {
-      showToast("Rotanız başarıyla kaydedildi!", "success");
-      setNewRoute({ title: '', desc: '', startName: '', endName: '' });
-      setDraftRoute({ start: null, end: null });
-      setIsRouteModalOpen(false);
-      fetchAllData();
-    } else {
-      showToast("Hata: " + error.message, "error");
-    }
-    setIsSubmitting(false);
-  };
-
-  const handleAddSpot = async () => {
-    if (!user) return showToast('Spot eklemek için giriş yapın.', 'warning');
-    if (!newSpot.title.trim()) return showToast('Başlık zorunludur.', 'warning');
-    if (!newSpot.lat || !newSpot.lng) return showToast('Haritadan konum seçin veya koordinat girin.', 'warning');
-    setIsSubmitting(true);
-    const { error } = await supabase.from('spots').insert([{
-      user_id: user.id,
-      title: newSpot.title,
-      category: newSpot.category,
-      address: newSpot.address || null,
-      description: newSpot.description || null,
-      lat: parseFloat(newSpot.lat),
-      lng: parseFloat(newSpot.lng),
-      attributes: {
-        water: newSpot.water, electricity: newSpot.electricity,
-        wc: newSpot.wc, pet_friendly: newSpot.pet_friendly,
-      },
-    }]);
-    if (error) {
-      showToast('Hata: ' + error.message, 'error');
-    } else {
-      showToast('Spot başarıyla eklendi! Onaylandıktan sonra haritada görünecek.', 'success');
-      setIsAddSpotOpen(false);
-      setNewSpot(EMPTY_NEW_SPOT);
-      fetchAllData();
-    }
-    setIsSubmitting(false);
   };
 
   const toggleSpotBookmark = async () => {
-    if (!user || !selectedSpot) return showToast("Favoriye eklemek için giriş yapmalısınız.", "info");
+    if (!user || !selectedSpot) {
+      showToast('Favoriye eklemek için giriş yapmalısınız.', 'info');
+      return;
+    }
     const isBookmarked = bookmarkedSpots.has(selectedSpot.id);
     const next = new Set(bookmarkedSpots);
     if (isBookmarked) {
       next.delete(selectedSpot.id);
       setBookmarkedSpots(next);
       await supabase.from('bookmarks').delete().eq('user_id', user.id).eq('item_type', 'spot').eq('item_id', selectedSpot.id);
-      showToast("Favorilerden kaldırıldı.", "info");
+      showToast('Favorilerden kaldırıldı.', 'info');
     } else {
       next.add(selectedSpot.id);
       setBookmarkedSpots(next);
-      await supabase.from('bookmarks').insert([{ user_id: user.id, item_type: 'spot', item_id: selectedSpot.id }]);
-      showToast("Favorilere eklendi!", "success");
+      await supabase.from('bookmarks').insert({ user_id: user.id, item_type: 'spot', item_id: selectedSpot.id });
+      showToast('Favorilere eklendi! ★', 'success');
     }
   };
 
   const toggleCheckin = async () => {
-    if (!user || !selectedSpot) return showToast('Check-in için giriş yapmalısınız.', 'info');
-    const isCheckedIn = checkedInSpots.has(selectedSpot.id);
+    if (!user || !selectedSpot) {
+      showToast('Check-in yapmak için giriş yapmalısınız.', 'info');
+      return;
+    }
+    const isChecked = checkedInSpots.has(selectedSpot.id);
     const next = new Set(checkedInSpots);
-    if (isCheckedIn) {
+    if (isChecked) {
       next.delete(selectedSpot.id);
       setCheckedInSpots(next);
       setCheckinCounts(c => ({ ...c, [selectedSpot.id]: Math.max(0, (c[selectedSpot.id] || 1) - 1) }));
@@ -354,17 +331,105 @@ export default function KesfetPage() {
     }
   };
 
-  const openDirections = () => {
-    if (!selectedSpot) return;
-    window.open(`https://www.google.com/maps/dir/?api=1&destination=${selectedSpot.lat},${selectedSpot.lng}&travelmode=driving`, '_blank', 'noopener,noreferrer');
+  const openDirections = (spot: Spot) => {
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${spot.lat},${spot.lng}&travelmode=driving`, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <div className={styles.container}>
-      <aside className={styles.sidebar}>
+      {/* ─── Top Floating Filter & Search Bar ─── */}
+      <div className={styles.topFloatingBar}>
+        <div className={styles.searchRow}>
+          <div className={styles.searchBox}>
+            <span className={styles.searchIcon}>🔍</span>
+            <input
+              type="text"
+              placeholder="Mekan veya şehir ara..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && <button className={styles.clearSearchBtn} onClick={() => setSearch('')}>✕</button>}
+          </div>
+
+          <button
+            className={styles.addSpotBtn}
+            onClick={() => user ? setIsAddSpotOpen(true) : showToast('Spot eklemek için giriş yapın.', 'info')}
+            title="Yeni Mekan Ekle"
+          >
+            + Mekan Ekle
+          </button>
+        </div>
+
+        {/* Chips Bar */}
+        <div className={styles.chipsScroll}>
+          {['Hepsi', 'Sakin Köşe', 'Yol Yardımcısı'].map(f => (
+            <button
+              key={f}
+              className={`${styles.chip} ${activeCategory === f ? styles.chipActive : ''}`}
+              onClick={() => setActiveCategory(f)}
+            >
+              {f === 'Sakin Köşe' ? '🏕️ ' : f === 'Yol Yardımcısı' ? '🔧 ' : '✨ '}
+              {f}
+            </button>
+          ))}
+
+          <button
+            className={`${styles.chip} ${activeCategory === 'Yakınımda' ? styles.chipActive : ''}`}
+            onClick={handleNearMe}
+            disabled={isLocating}
+          >
+            📍 {isLocating ? 'Bulunuyor...' : 'Yakınımda'}
+          </button>
+
+          {/* Amenity Toggles */}
+          <button
+            className={`${styles.chip} ${filterWater ? styles.chipAmenityActive : ''}`}
+            onClick={() => setFilterWater(!filterWater)}
+          >
+            💧 Su
+          </button>
+          <button
+            className={`${styles.chip} ${filterElectricity ? styles.chipAmenityActive : ''}`}
+            onClick={() => setFilterElectricity(!filterElectricity)}
+          >
+            ⚡ Elektrik
+          </button>
+          <button
+            className={`${styles.chip} ${filterWc ? styles.chipAmenityActive : ''}`}
+            onClick={() => setFilterWc(!filterWc)}
+          >
+            🚽 WC
+          </button>
+          <button
+            className={`${styles.chip} ${filterPet ? styles.chipAmenityActive : ''}`}
+            onClick={() => setFilterPet(!filterPet)}
+          >
+            🐾 Evcil Hayvan
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Mobile View Toggle Button (Floating) ─── */}
+      <div className={styles.mobileViewToggle}>
+        <button
+          className={`${styles.toggleBtn} ${mobileView === 'map' ? styles.toggleBtnActive : ''}`}
+          onClick={() => setMobileView('map')}
+        >
+          🗺️ Harita
+        </button>
+        <button
+          className={`${styles.toggleBtn} ${mobileView === 'list' ? styles.toggleBtnActive : ''}`}
+          onClick={() => setMobileView('list')}
+        >
+          📋 Liste ({filteredSpots.length})
+        </button>
+      </div>
+
+      {/* ─── Sidebar (Desktop Always, Mobile only in list view) ─── */}
+      <aside className={`${styles.sidebar} ${mobileView === 'map' ? styles.sidebarMobileHidden : ''}`}>
         {selectedSpot ? (
           <div className={styles.detailView}>
-            <button className={styles.backBtn} onClick={() => setSelectedSpot(null)}>← Geri Dön</button>
+            <button className={styles.backBtn} onClick={() => setSelectedSpot(null)}>← Mekan Listesine Dön</button>
             <div className={styles.detailImage} style={{
               backgroundImage: selectedSpot.image_url ? `url("${selectedSpot.image_url}")` : 'none',
               backgroundSize: 'cover', backgroundPosition: 'center',
@@ -454,7 +519,7 @@ export default function KesfetPage() {
               )}
 
               <div className={styles.detailActions}>
-                <button className="btn-primary" style={{width: '100%'}} onClick={openDirections}>
+                <button className="btn-primary" style={{width: '100%'}} onClick={() => openDirections(selectedSpot)}>
                   🧭 Yol Tarifi Al
                 </button>
                 <button
@@ -492,111 +557,88 @@ export default function KesfetPage() {
             </div>
           </div>
         ) : (
-          <>
-            <div className={styles.sidebarTopBar}>
-              <div className={styles.searchBox}>
-                <input
-                  type="text"
-                  placeholder="Mekan veya şehir ara..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+          <div className={styles.resultsList}>
+            <div className={styles.resultsHeader}>
+              <span>{filteredSpots.length} Mekan Listeleniyor</span>
+            </div>
+
+            {isLoading ? (
+              <>
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className={styles.skeletonCard}>
+                    <div className={styles.skeletonImg} />
+                    <div className={styles.skeletonInfo}>
+                      <div className={styles.skeletonLine} style={{width: '70%'}} />
+                      <div className={styles.skeletonLine} style={{width: '45%', height: 10}} />
+                      <div className={styles.skeletonLine} style={{width: '90%', height: 10}} />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : filteredSpots.length === 0 ? (
+              <div className={styles.emptyResults}>
+                <span>🏕️</span>
+                <p>Aramanıza uygun mekan bulunamadı.</p>
+                <small>Filtreleri sıfırlamayı veya haritayı kaydırmayı deneyin.</small>
               </div>
-              <button
-                className={styles.addSpotBtn}
-                onClick={() => user ? setIsAddSpotOpen(true) : showToast('Spot eklemek için giriş yapın.', 'info')}
-                title="Yeni Spot Ekle"
-              >
-                +
-              </button>
-            </div>
-
-            <div className={styles.filters}>
-              {['Hepsi', 'Sakin Köşe', 'Yol Yardımcısı'].map(f => (
-                <button key={f} className={activeFilter === f ? styles.activeFilter : ''} onClick={() => setActiveFilter(f)}>
-                  {f}
-                </button>
-              ))}
-              <button
-                className={`${activeFilter === 'Yakınımda' ? styles.activeFilter : ''} ${styles.nearMeBtn}`}
-                onClick={handleNearMe}
-                disabled={isLocating}
-              >
-                {isLocating ? '📍 Bulunuyor...' : '📍 Yakınımda'}
-              </button>
-            </div>
-
-            <div className={styles.resultsList}>
-              {isLoading ? (
-                <>
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className={styles.skeletonCard}>
-                      <div className={styles.skeletonImg} />
-                      <div className={styles.skeletonInfo}>
-                        <div className={styles.skeletonLine} style={{width: '70%'}} />
-                        <div className={styles.skeletonLine} style={{width: '45%', height: 10}} />
-                        <div className={styles.skeletonLine} style={{width: '90%', height: 10}} />
-                      </div>
+            ) : (
+              filteredSpots.map((spot) => {
+                const distance = userLocation
+                  ? calculateDistance(userLocation.lat, userLocation.lng, spot.lat, spot.lng).toFixed(1)
+                  : null;
+                const rating = spotRatings[spot.id];
+                return (
+                  <div
+                    key={spot.id}
+                    className={styles.resultCard + " glass-card"}
+                    onClick={() => {
+                      setSelectedSpot(spot);
+                      setMobileView('map');
+                    }}
+                  >
+                    <div className={styles.cardImage} style={{
+                      backgroundImage: spot.image_url ? `url("${spot.image_url}")` : 'none',
+                      backgroundColor: spot.image_url ? 'transparent' : (spot.category === 'Sakin Köşe' ? 'rgba(45, 90, 39, 0.15)' : 'rgba(255, 140, 66, 0.15)'),
+                      backgroundSize: 'cover', backgroundPosition: 'center',
+                      display: 'flex', alignSelf: 'center', justifyContent: 'center',
+                      color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)'
+                    }}>
+                      {!spot.image_url && (spot.category === 'Sakin Köşe' ? <IconCamp size={24} /> : <IconTool size={24} />)}
                     </div>
-                  ))}
-                </>
-              ) : filteredSpots.length === 0 ? (
-                <p style={{textAlign: 'center', opacity: 0.5, marginTop: '20px'}}>Sonuç bulunamadı.</p>
-              ) : (
-                filteredSpots.map((spot) => {
-                  const distance = userLocation
-                    ? calculateDistance(userLocation.lat, userLocation.lng, spot.lat, spot.lng).toFixed(1)
-                    : null;
-                  const rating = spotRatings[spot.id];
-                  return (
-                    <div
-                      key={spot.id}
-                      className={styles.resultCard + " glass-card"}
-                      onClick={() => setSelectedSpot(spot)}
-                    >
-                      <div className={styles.cardImage} style={{
-                        backgroundImage: spot.image_url ? `url("${spot.image_url}")` : 'none',
-                        backgroundColor: spot.image_url ? 'transparent' : (spot.category === 'Sakin Köşe' ? 'rgba(45, 90, 39, 0.1)' : 'rgba(255, 140, 66, 0.1)'),
-                        backgroundSize: 'cover', backgroundPosition: 'center',
-                        display: 'flex', alignSelf: 'center', justifyContent: 'center',
-                        color: spot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)'
-                      }}>
-                        {!spot.image_url && (spot.category === 'Sakin Köşe' ? <IconCamp size={24} /> : <IconTool size={24} />)}
-                      </div>
-                      <div className={styles.cardInfo}>
-                        <h4>{spot.title}</h4>
-                        <p>{spot.category}</p>
-                        <div className={styles.cardFooter}>
-                          <span>{spot.address || 'Konum belirtilmedi'}</span>
-                          <div className={styles.cardBadges}>
-                            {rating && (
-                              <span className={styles.ratingBadge}>★ {rating.avg.toFixed(1)}</span>
-                            )}
-                            {distance && <span className={styles.distanceBadge}>{distance} km</span>}
-                          </div>
+                    <div className={styles.cardInfo}>
+                      <h4>{spot.title}</h4>
+                      <p>{spot.category}</p>
+                      <div className={styles.cardFooter}>
+                        <span>{spot.address || 'Konum belirtilmedi'}</span>
+                        <div className={styles.cardBadges}>
+                          {rating && (
+                            <span className={styles.ratingBadge}>★ {rating.avg.toFixed(1)}</span>
+                          )}
+                          {distance && <span className={styles.distanceBadge}>{distance} km</span>}
                         </div>
-                        {spot.attributes && (
-                          <div className={styles.cardAttributes}>
-                            {spot.attributes.water && <span>💧</span>}
-                            {spot.attributes.electricity && <span>⚡</span>}
-                            {spot.attributes.wc && <span>🚽</span>}
-                            {spot.attributes.pet_friendly && <span>🐾</span>}
-                          </div>
-                        )}
                       </div>
+                      {spot.attributes && (
+                        <div className={styles.cardAttributes}>
+                          {spot.attributes.water && <span>💧</span>}
+                          {spot.attributes.electricity && <span>⚡</span>}
+                          {spot.attributes.wc && <span>🚽</span>}
+                          {spot.attributes.pet_friendly && <span>🐾</span>}
+                        </div>
+                      )}
                     </div>
-                  );
-                })
-              )}
-            </div>
-          </>
+                  </div>
+                );
+              })
+            )}
+          </div>
         )}
       </aside>
 
-      <main className={styles.mapArea}>
+      {/* ─── Map Area ─── */}
+      <main className={`${styles.mapArea} ${mobileView === 'list' ? styles.mapAreaMobileHidden : ''}`}>
         {isPickingSpotLocation && (
           <div className={styles.pickingOverlay}>
-            📍 Haritaya tıklayarak konum seçin
+            📍 Haritaya tıklayarak mekanın tam konumunu seçin
           </div>
         )}
         <MapWithNoSSR
@@ -608,6 +650,58 @@ export default function KesfetPage() {
           userLocation={userLocation}
           selectedSpot={selectedSpot}
         />
+
+        {/* Floating Quick Card for Selected Spot on Map (Desktop & Mobile) */}
+        {selectedSpot && (
+          <div className={styles.floatingSpotCard}>
+            <div className={styles.floatingCardLeft}>
+              <div
+                className={styles.floatingCardImg}
+                style={{
+                  backgroundImage: selectedSpot.image_url ? `url("${selectedSpot.image_url}")` : 'none',
+                  backgroundColor: selectedSpot.category === 'Sakin Köşe' ? 'var(--forest-green)' : 'var(--sunset-orange)'
+                }}
+              >
+                {!selectedSpot.image_url && (selectedSpot.category === 'Sakin Köşe' ? '🏕️' : '🔧')}
+              </div>
+              <div className={styles.floatingCardMeta}>
+                <h4>{selectedSpot.title}</h4>
+                <p>{selectedSpot.category} • {selectedSpot.address || 'Konum'}</p>
+                {selectedSpot.attributes && (
+                  <div className={styles.floatingAmenities}>
+                    {selectedSpot.attributes.water && <span>💧 Su</span>}
+                    {selectedSpot.attributes.electricity && <span>⚡ Elektrik</span>}
+                    {selectedSpot.attributes.wc && <span>🚽 WC</span>}
+                    {selectedSpot.attributes.pet_friendly && <span>🐾 Pet</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.floatingCardActions}>
+              <button
+                className="btn-primary"
+                onClick={() => openDirections(selectedSpot)}
+              >
+                🧭 Yol Tarifi
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setMobileView('list');
+                }}
+              >
+                Detaylar
+              </button>
+              <button
+                className={styles.floatingCardClose}
+                onClick={() => setSelectedSpot(null)}
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className={styles.mapActions}>
           <button
@@ -661,37 +755,7 @@ export default function KesfetPage() {
                   setIsSubmitting(false);
                 }}
               >
-                {isSubmitting ? 'Kaydediliyor...' : 'Notu Askıya Bırak'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Route Modal */}
-      {isRouteModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent + " glass-card"}>
-            <h3>🗺️ Rotanı Kaydet</h3>
-            <p style={{fontSize: '0.9rem', marginBottom: '15px', opacity: 0.8}}>
-              Haritaya çizdiğin izi diğer karavancılarla paylaş.
-            </p>
-            <input type="text" placeholder="Rota Başlığı (Örn: Ege Kıyıları)"
-              value={newRoute.title} onChange={(e) => setNewRoute({...newRoute, title: e.target.value})}
-              style={{width: '100%', marginBottom: '12px'}} />
-            <div style={{display: 'flex', gap: '10px', marginBottom: '12px'}}>
-              <input type="text" placeholder="Nereden?" value={newRoute.startName}
-                onChange={(e) => setNewRoute({...newRoute, startName: e.target.value})} style={{flex: 1}} />
-              <input type="text" placeholder="Nereye?" value={newRoute.endName}
-                onChange={(e) => setNewRoute({...newRoute, endName: e.target.value})} style={{flex: 1}} />
-            </div>
-            <textarea placeholder="Rotanın detayları, yol durumu, manzara..."
-              value={newRoute.desc} onChange={(e) => setNewRoute({...newRoute, desc: e.target.value})}
-              rows={3} style={{width: '100%', marginBottom: '12px'}} />
-            <div className={styles.modalActions}>
-              <button onClick={() => { setIsRouteModalOpen(false); setDraftRoute({ start: null, end: null }); }} className="btn-ghost">İptal</button>
-              <button className="btn-primary" disabled={isSubmitting || !newRoute.title.trim()} onClick={handleShareRoute}>
-                {isSubmitting ? 'Kaydediliyor...' : 'İz Bırak'}
+                {isSubmitting ? 'Kaydediliyor...' : 'Askıya Bırak'}
               </button>
             </div>
           </div>
@@ -702,74 +766,187 @@ export default function KesfetPage() {
       {isAddSpotOpen && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent + " glass-card"}>
-            <h3>📍 Yeni Spot Ekle</h3>
-            <p style={{fontSize: '0.9rem', marginBottom: '15px', opacity: 0.8}}>
-              Keşfettiğin konaklamayı veya hizmet noktasını topluluğa ekle.
+            <h3>📍 Yeni Mekan Ekle</h3>
+            <p style={{fontSize: '0.85rem', marginBottom: '15px', opacity: 0.8}}>
+              Bildiğin bir sakin köşeyi veya güvendiğin bir yol yardımcısını komşularınla paylaş.
             </p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!user) return;
+              if (!newSpot.title || !newSpot.lat || !newSpot.lng) {
+                showToast("Lütfen isim ve konum bilgilerini doldurun.", "info");
+                return;
+              }
+              setIsSubmitting(true);
+              const pointWkt = `POINT(${newSpot.lng} ${newSpot.lat})`;
+              const { error } = await supabase.from('spots').insert([{
+                created_by: user.id,
+                title: newSpot.title,
+                category: newSpot.category,
+                address: newSpot.address || null,
+                description: newSpot.description || null,
+                location: pointWkt,
+                attributes: {
+                  water: newSpot.water,
+                  electricity: newSpot.electricity,
+                  wc: newSpot.wc,
+                  pet_friendly: newSpot.pet_friendly,
+                }
+              }]);
+              if (error) {
+                showToast("Hata: " + error.message, "error");
+              } else {
+                showToast("Yeni mekan eklendi! Teşekkürler komşu.", "success");
+                setIsAddSpotOpen(false);
+                setNewSpot(EMPTY_NEW_SPOT);
+                fetchAllData();
+              }
+              setIsSubmitting(false);
+            }}>
+              <div className={styles.formGroup}>
+                <label>Mekan Adı</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: Akbük Koyu Sakin Kamp Alanı"
+                  value={newSpot.title}
+                  onChange={e => setNewSpot(p => ({ ...p, title: e.target.value }))}
+                />
+              </div>
 
-            <div className={styles.spotFormGrid}>
-              <input type="text" placeholder="Spot adı *" value={newSpot.title}
-                onChange={e => setNewSpot(s => ({...s, title: e.target.value}))} style={{gridColumn: '1/-1'}} />
-
-              <select value={newSpot.category} onChange={e => setNewSpot(s => ({...s, category: e.target.value}))}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-
-              <input type="text" placeholder="Adres / Şehir" value={newSpot.address}
-                onChange={e => setNewSpot(s => ({...s, address: e.target.value}))} />
-
-              <textarea placeholder="Açıklama (isteğe bağlı)" rows={3} value={newSpot.description}
-                onChange={e => setNewSpot(s => ({...s, description: e.target.value}))} style={{gridColumn: '1/-1'}} />
-
-              <div className={styles.coordRow}>
-                <input type="text" placeholder="Enlem (lat)" value={newSpot.lat}
-                  onChange={e => setNewSpot(s => ({...s, lat: e.target.value}))} />
-                <input type="text" placeholder="Boylam (lng)" value={newSpot.lng}
-                  onChange={e => setNewSpot(s => ({...s, lng: e.target.value}))} />
-                <button type="button" className={styles.pickLocBtn}
-                  onClick={() => {
-                    setIsAddSpotOpen(false);
-                    setIsPickingSpotLocation(true);
-                    showToast("Haritaya tıklayarak konum seçin.", "info");
-                  }}
+              <div className={styles.formGroup}>
+                <label>Kategori</label>
+                <select
+                  value={newSpot.category}
+                  onChange={e => setNewSpot(p => ({ ...p, category: e.target.value }))}
                 >
-                  🗺️ Haritadan Seç
-                </button>
-                {userLocation && (
-                  <button type="button" className={styles.pickLocBtn}
-                    onClick={() => setNewSpot(s => ({...s, lat: userLocation.lat.toFixed(6), lng: userLocation.lng.toFixed(6)}))}
+                  <option value="Sakin Köşe">Sakin Köşe (Kamp / Konaklama)</option>
+                  <option value="Yol Yardımcısı">Yol Yardımcısı (Usta / Servis / Lastikçi)</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Konum Koordinatları</label>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <input
+                    type="text"
+                    readOnly
+                    placeholder="Enlem, Boylam"
+                    value={newSpot.lat && newSpot.lng ? `${newSpot.lat}, ${newSpot.lng}` : ''}
+                  />
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setIsAddSpotOpen(false);
+                      setIsPickingSpotLocation(true);
+                      showToast("Haritada konuma tıklayın.", "info");
+                    }}
                   >
-                    📍 Konumumu Kullan
+                    Haritadan Seç
                   </button>
-                )}
+                </div>
               </div>
 
-              <div className={styles.attrCheckboxes} style={{gridColumn: '1/-1'}}>
-                <label className={styles.checkLabel}>
-                  <input type="checkbox" checked={newSpot.water} onChange={e => setNewSpot(s => ({...s, water: e.target.checked}))} />
-                  💧 Su
-                </label>
-                <label className={styles.checkLabel}>
-                  <input type="checkbox" checked={newSpot.electricity} onChange={e => setNewSpot(s => ({...s, electricity: e.target.checked}))} />
-                  ⚡ Elektrik
-                </label>
-                <label className={styles.checkLabel}>
-                  <input type="checkbox" checked={newSpot.wc} onChange={e => setNewSpot(s => ({...s, wc: e.target.checked}))} />
-                  🚽 WC
-                </label>
-                <label className={styles.checkLabel}>
-                  <input type="checkbox" checked={newSpot.pet_friendly} onChange={e => setNewSpot(s => ({...s, pet_friendly: e.target.checked}))} />
-                  🐾 Evcil Hayvan
-                </label>
+              <div className={styles.formGroup}>
+                <label>Adres / Yol Tarifi Notu</label>
+                <input
+                  type="text"
+                  placeholder="Örn: Muğla, Milas yolu üzeri sahil tarafı"
+                  value={newSpot.address}
+                  onChange={e => setNewSpot(p => ({ ...p, address: e.target.value }))}
+                />
               </div>
-            </div>
 
-            <div className={styles.modalActions}>
-              <button onClick={() => setIsAddSpotOpen(false)} className="btn-ghost">İptal</button>
-              <button className="btn-primary" disabled={isSubmitting || !newSpot.title.trim()} onClick={handleAddSpot}>
-                {isSubmitting ? 'Ekleniyor...' : 'Spot Ekle'}
-              </button>
-            </div>
+              <div className={styles.formGroup}>
+                <label>Açıklama</label>
+                <textarea
+                  rows={3}
+                  placeholder="Mekan hakkında bilinenler, zemin durumu, yol kalitesi vb."
+                  value={newSpot.description}
+                  onChange={e => setNewSpot(p => ({ ...p, description: e.target.value }))}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Olanaklar</label>
+                <div className={styles.checkboxGrid}>
+                  <label><input type="checkbox" checked={newSpot.water} onChange={e => setNewSpot(p => ({...p, water: e.target.checked}))} /> 💧 Su</label>
+                  <label><input type="checkbox" checked={newSpot.electricity} onChange={e => setNewSpot(p => ({...p, electricity: e.target.checked}))} /> ⚡ Elektrik</label>
+                  <label><input type="checkbox" checked={newSpot.wc} onChange={e => setNewSpot(p => ({...p, wc: e.target.checked}))} /> 🚽 WC</label>
+                  <label><input type="checkbox" checked={newSpot.pet_friendly} onChange={e => setNewSpot(p => ({...p, pet_friendly: e.target.checked}))} /> 🐾 Evcil Hayvan</label>
+                </div>
+              </div>
+
+              <div className={styles.modalActions}>
+                <button type="button" onClick={() => setIsAddSpotOpen(false)} className="btn-ghost">İptal</button>
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Ekleniyor...' : 'Mekanı Kaydet'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Route Modal */}
+      {isRouteModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent + " glass-card"}>
+            <h3>🛣️ Yeni Rota Kaydet</h3>
+            <p style={{fontSize: '0.85rem', marginBottom: '15px', opacity: 0.8}}>
+              Çizdiğin bu rotayı komşularınla paylaş.
+            </p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!user || !draftRoute.start || !draftRoute.end) return;
+              setIsSubmitting(true);
+              const linestringWkt = `LINESTRING(${draftRoute.start[1]} ${draftRoute.start[0]}, ${draftRoute.end[1]} ${draftRoute.end[0]})`;
+              const { error } = await supabase.from('routes').insert([{
+                user_id: user.id,
+                title: newRoute.title,
+                description: newRoute.desc,
+                start_name: newRoute.startName || 'Başlangıç',
+                end_name: newRoute.endName || 'Varış',
+                route_line: linestringWkt,
+              }]);
+              if (error) {
+                showToast("Hata: " + error.message, "error");
+              } else {
+                showToast("Rotanız paylaşıldı!", "success");
+                setIsRouteModalOpen(false);
+                setDraftRoute({ start: null, end: null });
+                setDrawMode(false);
+                fetchAllData();
+              }
+              setIsSubmitting(false);
+            }}>
+              <div className={styles.formGroup}>
+                <label>Rota Başlığı</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Örn: Ege Sahil Güzergahı"
+                  value={newRoute.title}
+                  onChange={e => setNewRoute(p => ({...p, title: e.target.value}))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Açıklama</label>
+                <textarea
+                  rows={3}
+                  placeholder="Yol durumu, manzaralar, dikkat edilecek virajlar..."
+                  value={newRoute.desc}
+                  onChange={e => setNewRoute(p => ({...p, desc: e.target.value}))}
+                />
+              </div>
+              <div className={styles.modalActions}>
+                <button type="button" onClick={() => setIsRouteModalOpen(false)} className="btn-ghost">İptal</button>
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Kaydediliyor...' : 'Rotayı Paylaş'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

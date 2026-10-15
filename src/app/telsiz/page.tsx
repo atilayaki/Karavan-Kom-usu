@@ -10,6 +10,22 @@ import type { Message, Profile } from '@/lib/database.types';
 import type { User } from '@supabase/supabase-js';
 import { IconRadio, IconSOS, IconUser, IconChat, IconHeart } from '@/components/Icons';
 
+const CHANNELS_CONFIG = [
+  { name: 'Kamp 1',          code: 'CH 09', freq: '27.065 MHz', desc: 'Genel karavan buluşma ve çağrı kanalı' },
+  { name: 'Mekanik & Arıza', code: 'CH 19', freq: '27.185 MHz', desc: 'Yol yardımı, tamir ve teknik destek' },
+  { name: 'Alım-Satım',      code: 'CH 14', freq: '27.125 MHz', desc: 'İkinci el ekipman ve malzeme takası' },
+  { name: 'Geyik',           code: 'CH 22', freq: '27.225 MHz', desc: 'Sohbet, rota anıları ve kahve muhabbeti' },
+  { name: 'Acil Durum',      code: 'CH 16', freq: '27.155 MHz', desc: '🚨 Acil SOS ve kaza/kurtarma frekansı', isEmergency: true },
+];
+
+const QUICK_RADIO_CALLS = [
+  '🚐 Komşular selam, herkese iyi yolculuklar!',
+  '☕ Çay demlendi, yakınlardaki komşuları beklerim!',
+  '💧 Burada temiz içme suyu çeşmesi faal durumda.',
+  '🚧 İleride yol çalışması / dar viraj var, dikkat!',
+  '🏕️ Bu koyda rüzgar kesildi, harika bir geceleme noktası.',
+];
+
 export default function TelsizPage() {
   const { showToast } = useToast();
   const scrollRef = useScrollReveal();
@@ -18,6 +34,7 @@ export default function TelsizPage() {
   const [privateUser, setPrivateUser] = useState<Pick<Profile, 'id' | 'full_name' | 'caravan_type'> | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [isTransmitting, setIsTransmitting] = useState(false);
 
   const [user, setUser] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<Pick<Profile, 'id' | 'full_name' | 'caravan_type'>[]>([]);
@@ -27,29 +44,39 @@ export default function TelsizPage() {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [nearbyUsers, setNearbyUsers] = useState<Array<Pick<Profile, 'id' | 'full_name' | 'caravan_type'> & { distance_km: number }>>([]);
   
+  const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
+  const [sosReason, setSosReason] = useState('Akü Bitti / Marş Basmıyor');
+  const [sosNote, setSosNote] = useState('');
+  const [sosCoords, setSosCoords] = useState<{lat: number, lng: number} | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [nudgeAlert, setNudgeAlert] = useState<string | null>(null);
 
-  const channels = ['Kamp 1', 'Mekanik & Arıza', 'Alım-Satım', 'Geyik', 'Acil Durum'];
-
-  // Two UUIDs → deterministic, collision-free DM channel id (lexicographic order)
+  // Two UUIDs → deterministic, collision-free DM channel id
   const dmChannelId = (a: string, b: string) => {
     const [x, y] = [a, b].sort();
     return `dm_${x}_${y}`;
   };
 
-  // Mobile: toggle which pane is visible (channels list vs chat)
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
 
-  // Initialize Auth & Data
-  useEffect(() => {
-    // Force scroll to top on navigation to avoid shifted layout
-    window.scrollTo(0, 0);
+  const currentChannelInfo = CHANNELS_CONFIG.find(c => c.name === activeChannel) || CHANNELS_CONFIG[0];
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
     fetchAllProfiles();
+
+    // Check URL params for channel
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const ch = params.get('channel');
+      if (ch && CHANNELS_CONFIG.some(c => c.name === ch)) {
+        setActiveChannel(ch);
+        setMobileView('chat');
+      }
+    }
   }, []);
 
   const fetchAllProfiles = async () => {
@@ -83,14 +110,13 @@ export default function TelsizPage() {
     
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords;
-      
-      // Update last_location in DB
+      setSosCoords({ lat: latitude, lng: longitude });
+
       await supabase.from('profiles').update({
         last_location: `POINT(${longitude} ${latitude})`
       }).eq('id', user.id);
 
-      // Fetch nearby neighbors
-      const { data, error } = await supabase.rpc('get_nearby_neighbors', {
+      const { data } = await supabase.rpc('get_nearby_neighbors', {
         p_user_id: user.id,
         p_lat: latitude,
         p_lng: longitude,
@@ -101,13 +127,11 @@ export default function TelsizPage() {
     });
   };
 
-  // Presence & Nudge Channel
+  // Presence
   useEffect(() => {
     const presenceId = user?.id || `guest_${Math.random().toString(36).substring(7)}`;
     const roomOne = supabase.channel('online-users', {
-      config: {
-        presence: { key: presenceId },
-      },
+      config: { presence: { key: presenceId } },
     });
 
     roomOne
@@ -122,24 +146,12 @@ export default function TelsizPage() {
         }
       });
 
-    let nudgeChannel: any = null;
-    if (user) {
-      nudgeChannel = supabase.channel(`nudge_${user.id}`);
-      nudgeChannel
-        .on('broadcast', { event: 'nudge' }, (payload: any) => {
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-          showToast(`${payload.payload.fromName} seni dürttü! 👉`, "info");
-        })
-        .subscribe();
-    }
-
     return () => {
       supabase.removeChannel(roomOne);
-      if (nudgeChannel) supabase.removeChannel(nudgeChannel);
     };
   }, [user]);
 
-  // Fetch Messages based on channel
+  // Messages fetch & realtime
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -155,21 +167,16 @@ export default function TelsizPage() {
           query = query.eq('channel', activeChannel);
         }
 
-        await supabase.from('messages').delete().lt('created_at', thirtyMinutesAgo);
-
         const { data, error } = await query.order('created_at', { ascending: true });
         
-        if (error) {
-          console.error("Messages fetch error details:", error);
-          setMessages([]);
-        } else if (data) {
+        if (!error && data) {
           const thirtyMins = 30 * 60 * 1000;
           const now = Date.now();
           const filtered = data.filter(msg => Math.abs(now - new Date(msg.created_at).getTime()) < thirtyMins);
           setMessages(filtered);
         }
       } catch (err) {
-        console.error("Unexpected error in fetchMessages:", err);
+        console.error("Messages fetch error:", err);
       }
     };
 
@@ -218,9 +225,9 @@ export default function TelsizPage() {
   const sendMessage = async (e?: React.FormEvent, overrideText?: string, overrideChannel?: string) => {
     if (e) e.preventDefault();
     const textToSend = overrideText || newMessage.trim();
-    
     if (!textToSend || !user) return;
 
+    setIsTransmitting(true);
     let targetChannel = overrideChannel || activeChannel;
     
     if (!overrideChannel && isPrivate && privateUser) {
@@ -235,11 +242,27 @@ export default function TelsizPage() {
       }
     ]);
 
+    setIsTransmitting(false);
+
     if (!error && !overrideText) {
       setNewMessage('');
     } else if (error) {
-      showToast("Mesaj gönderilemedi.", "error");
+      showToast("Mesaj iletilemedi: " + error.message, "error");
     }
+  };
+
+  const handleSendSOS = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return showToast("SOS yayını için giriş yapmalısınız.", "warning");
+
+    const locText = sosCoords ? `📍 Konum: ${sosCoords.lat.toFixed(4)}, ${sosCoords.lng.toFixed(4)}` : '📍 Konum: Paylaşılmadı';
+    const text = `🚨 ACİL DURUM SOS: [${sosReason}] - ${sosNote || 'Açıklama girilmedi.'} | ${locText}`;
+
+    setIsPrivate(false);
+    setActiveChannel('Acil Durum');
+    await sendMessage(undefined, text, 'Acil Durum');
+    setIsSOSModalOpen(false);
+    showToast("SOS Anonsu Kanal 16 Frekansına İletildi! 🚨", "error");
   };
 
   const handleAddFriend = async (friendId: string) => {
@@ -249,11 +272,7 @@ export default function TelsizPage() {
     ]);
     if (!error) {
       setPendingSent(prev => [...prev, friendId]);
-      showToast("Arkadaşlık isteği gönderildi!", "success");
-    } else if (error.code === '23505') {
-      showToast("İstek zaten gönderilmiş.", "info");
-    } else {
-      showToast("Gönderilemedi: " + error.message, "error");
+      showToast("Komşuluk isteği iletildi!", "success");
     }
   };
 
@@ -262,45 +281,8 @@ export default function TelsizPage() {
     if (!error) {
       setAcceptedFriends(prev => [...prev, senderId]);
       setPendingReceived(prev => prev.filter(r => r.id !== rowId));
-      showToast("Arkadaşlık kabul edildi!", "success");
+      showToast("Komşuluk kabul edildi! 🚐", "success");
     }
-  };
-
-  const handleRejectFriend = async (rowId: string) => {
-    await supabase.from('friendships').delete().eq('id', rowId);
-    setPendingReceived(prev => prev.filter(r => r.id !== rowId));
-    showToast("İstek reddedildi.", "info");
-  };
-
-  const handleNudge = async () => {
-    if (!user || !privateUser) return;
-    if (navigator.vibrate) {
-      navigator.vibrate(100);
-    }
-    
-    const myName = allUsers.find(u => u.id === user.id)?.full_name || 'Bir komşun';
-    const channel = supabase.channel(`nudge_${privateUser.id}`);
-    
-    await channel.send({
-      type: 'broadcast',
-      event: 'nudge',
-      payload: { fromName: myName },
-    });
-    
-    sendMessage(undefined, "👉 DÜRTÜYOR...");
-    showToast(`${privateUser.full_name} dürtüldü!`, "success");
-  };
-
-  const handleSOS = () => {
-    if (!user) return showToast("Lütfen giriş yapın.", "warning");
-    
-    const issue = prompt("Acil durumunuzu kısaca açıklayın (Örn: Çamura saplandım, Çekici lazım):");
-    if (!issue) return; 
-    
-    setIsPrivate(false);
-    setActiveChannel('Acil Durum');
-    sendMessage(undefined, `🚨 ACİL DURUM: ${issue} | Konum: Yaklaşık konum tespit edildi.`, 'Acil Durum');
-    showToast("SOS Bildirimi Gönderildi!", "error");
   };
 
   const formatTime = (isoString: string) => {
@@ -314,217 +296,299 @@ export default function TelsizPage() {
       ref={scrollRef}
       data-mobile-view={mobileView}
     >
+      {/* ─── Telsiz İstasyonu Sol Panel (Frekanslar & Komşular) ─── */}
       <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <IconRadio size={32} color="var(--forest-green)" />
-          <h2>Telsiz</h2>
+        <div className={styles.stationHeader}>
+          <div className={styles.stationIconWrap}>
+            <IconRadio size={24} color="#FF8C42" />
+          </div>
+          <div>
+            <h2 className={styles.stationTitle}>Karavan Telsizi</h2>
+            <p className={styles.stationSubtitle}>Halk Bandı (CB) Frekansları</p>
+          </div>
         </div>
-        
+
         <div className={styles.channelList}>
-          <h3>Frekanslar</h3>
-          {channels.map((ch) => (
-            <button
-              key={ch}
-              className={`${styles.channelBtn} ${!isPrivate && activeChannel === ch ? styles.activeChannel : ''}`}
-              onClick={() => { setIsPrivate(false); setActiveChannel(ch); setMobileView('chat'); }}
-            >
-              <span style={{opacity: 0.5}}>#</span> {ch}
-            </button>
-          ))}
-          
-          {/* Gelen arkadaşlık istekleri */}
+          <span className={styles.sectionHeading}>KANALLAR (FREKANSLAR)</span>
+          {CHANNELS_CONFIG.map((ch) => {
+            const isSelected = !isPrivate && activeChannel === ch.name;
+            return (
+              <button
+                key={ch.name}
+                className={`${styles.channelBtn} ${isSelected ? styles.activeChannel : ''} ${ch.isEmergency ? styles.emergencyChannelBtn : ''}`}
+                onClick={() => {
+                  setIsPrivate(false);
+                  setActiveChannel(ch.name);
+                  setMobileView('chat');
+                }}
+              >
+                <div className={styles.channelBtnLeft}>
+                  <span className={styles.channelCode}>{ch.code}</span>
+                  <div className={styles.channelMeta}>
+                    <span className={styles.channelName}>{ch.name}</span>
+                    <span className={styles.channelFreq}>{ch.freq}</span>
+                  </div>
+                </div>
+                {ch.isEmergency && <span className={styles.sosTag}>SOS</span>}
+              </button>
+            );
+          })}
+
+          {/* Gelen İstekler */}
           {pendingReceived.length > 0 && (
-            <>
-              <h3 className={styles.mt20}>📨 Gelen İstekler</h3>
-              <div className={styles.friendsList}>
-                {pendingReceived.map(req => {
-                  const sender = allUsers.find(u => u.id === req.senderId);
-                  if (!sender) return null;
-                  return (
-                    <div key={req.id} className={styles.friendCard}>
-                      <Link href={`/profil/${sender.id}`} className={styles.friendInfo}>
-                        <div className={styles.avatarWrap}>
-                          <div className={styles.avatar}>{(sender.full_name || 'K').charAt(0)}</div>
-                        </div>
-                        <div className={styles.friendDetails}>
-                          <span className={styles.friendName}>{sender.full_name || 'Gizli Karavancı'}</span>
-                          <span className={styles.friendType}>{sender.caravan_type || 'Bilinmiyor'}</span>
-                        </div>
-                      </Link>
-                      <div className={styles.friendActions}>
-                        <button className={styles.acceptBtn} onClick={() => handleAcceptFriend(req.id, req.senderId)} title="Kabul et">✓</button>
-                        <button className={styles.rejectBtn} onClick={() => handleRejectFriend(req.id)} title="Reddet">✕</button>
+            <div className={styles.incomingSection}>
+              <span className={styles.sectionHeading}>GELEN KOMŞULUK İSTEKLERİ</span>
+              {pendingReceived.map(req => {
+                const sender = allUsers.find(u => u.id === req.senderId);
+                if (!sender) return null;
+                return (
+                  <div key={req.id} className={styles.friendCard}>
+                    <div className={styles.friendInfo}>
+                      <div className={styles.avatar}>{(sender.full_name || 'K').charAt(0)}</div>
+                      <div className={styles.friendDetails}>
+                        <span className={styles.friendName}>{sender.full_name}</span>
+                        <span className={styles.friendType}>{sender.caravan_type || 'Gezgin'}</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                    <div className={styles.friendActions}>
+                      <button className={styles.acceptBtn} onClick={() => handleAcceptFriend(req.id, req.senderId)}>✓</button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
 
-          <h3 className={styles.mt20}>Karavancılar</h3>
+          {/* Çevredeki Komşular */}
+          <span className={styles.sectionHeading}>ÇEVREDEKİ KOMŞULAR ({onlineUsers.length} CANLI)</span>
           <div className={styles.friendsList}>
             {allUsers
-              .filter(u => u.id !== user?.id && onlineUsers.includes(u.id)) 
+              .filter(u => u.id !== user?.id && onlineUsers.includes(u.id))
               .map(u => {
                 const isAccepted = acceptedFriends.includes(u.id);
                 const isPending = pendingSent.includes(u.id);
-                const isIncoming = pendingReceived.some(r => r.senderId === u.id);
 
-              return (
-                <div key={u.id} className={`${styles.friendCard} ${isPrivate && privateUser?.id === u.id ? styles.activeFriend : ''}`}>
-                  <Link href={`/profil/${u.id}`} className={styles.friendInfo}>
-                    <div className={styles.avatarWrap}>
-                      <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
-                      <div className={styles.onlineDot}></div>
-                    </div>
-                    <div className={styles.friendDetails}>
-                      <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
-                      <span className={styles.friendType}>{u.caravan_type || 'Bilinmiyor'}</span>
-                    </div>
-                  </Link>
-
-                  {isAccepted ? (
-                    <div className={styles.friendActions}>
-                      <button title="Telsizde Mesajlaş" onClick={() => { setIsPrivate(true); setPrivateUser(u); setMobileView('chat'); }}>
-                        <IconChat size={16} />
-                      </button>
-                      <Link href={`/mesajlar/${u.id}`} title="Kalıcı DM" className={styles.dmLink}>💬</Link>
-                    </div>
-                  ) : isPending || isIncoming ? (
-                    <span className={styles.pendingBadge}>{isIncoming ? '📨 Geldi' : '⏳ Bekliyor'}</span>
-                  ) : (
-                    <button className={styles.addFriendBtn} onClick={() => handleAddFriend(u.id)}>+ Ekle</button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {nearbyUsers.length > 0 && (
-            <>
-              <h3 className={styles.mt20}>📍 Yakındaki Komşular</h3>
-              <div className={styles.friendsList}>
-                {nearbyUsers
-                  .filter(u => onlineUsers.includes(u.id)) // Yakındakilerde de sadece online olanlar
-                  .map(u => (
-                  <div key={`nearby-${u.id}`} className={styles.friendCard}>
+                return (
+                  <div key={u.id} className={`${styles.friendCard} ${isPrivate && privateUser?.id === u.id ? styles.activeFriend : ''}`}>
                     <Link href={`/profil/${u.id}`} className={styles.friendInfo}>
                       <div className={styles.avatarWrap}>
                         <div className={styles.avatar}>{(u.full_name || 'K').charAt(0)}</div>
                         <div className={styles.onlineDot}></div>
-                        <div className={styles.distanceBadge}>{u.distance_km.toFixed(1)} km</div>
                       </div>
                       <div className={styles.friendDetails}>
                         <span className={styles.friendName}>{u.full_name || 'Gizli Karavancı'}</span>
-                        <span className={styles.friendType}>{u.caravan_type || 'Bilinmiyor'}</span>
+                        <span className={styles.friendType}>{u.caravan_type || 'Gezgin'}</span>
                       </div>
                     </Link>
+
+                    {isAccepted ? (
+                      <button
+                        className={styles.dmActionBtn}
+                        title="Telsiz Özel Hat"
+                        onClick={() => { setIsPrivate(true); setPrivateUser(u); setMobileView('chat'); }}
+                      >
+                        <IconChat size={16} />
+                      </button>
+                    ) : isPending ? (
+                      <span className={styles.pendingBadge}>Bekliyor</span>
+                    ) : (
+                      <button className={styles.addFriendBtn} onClick={() => handleAddFriend(u.id)}>+ Ekle</button>
+                    )}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                );
+              })}
+          </div>
         </div>
       </aside>
 
+      {/* ─── Telsiz İletişim Alanı (CB Radio Cockpit) ─── */}
       <main className={styles.chatArea}>
-        <div className={styles.chatHeader}>
-          <button
-            type="button"
-            className={styles.backBtn}
-            onClick={() => setMobileView('list')}
-            aria-label="Frekans listesine dön"
-          >
-            ←
-          </button>
-          {isPrivate && privateUser ? (
-            <div style={{display:'flex', alignItems:'center', gap:'15px', flex:1, minWidth: 0}}>
-              <h3 style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>🔒 {privateUser.full_name}</h3>
-              <button className={styles.nudgeButton} onClick={handleNudge}>👉 Dürt</button>
-            </div>
-          ) : (
-            <div style={{display:'flex', alignItems:'center', gap:'10px', flex:1, minWidth: 0}}>
-              <span className="pulse-dot"></span>
-              <h3 style={{whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}># {activeChannel}</h3>
-            </div>
-          )}
-
-          {!isPrivate && (
-            <button className={styles.sosButton} onClick={handleSOS}>
-              <IconSOS size={18} color="white" /> <span>SOS Bildir</span>
+        {/* CB Radio Display Panel */}
+        <div className={styles.cbDisplayPanel}>
+          <div className={styles.cbDisplayTop}>
+            <button
+              type="button"
+              className={styles.backBtn}
+              onClick={() => setMobileView('list')}
+              aria-label="Frekans Listesi"
+            >
+              ← Kanallar
             </button>
-          )}
-        </div>
 
-        <div className={styles.messagesContainer}>
-          <div className={styles.dateSeparator}>{isPrivate ? 'Özel Yazışma' : 'Canlı Yayın Aktif'}</div>
-          
-          {messages
-            .filter(msg => {
-              const now = Date.now();
-              const thirtyMins = 30 * 60 * 1000;
-              return Math.abs(now - new Date(msg.created_at).getTime()) < thirtyMins;
-            })
-            .map((msg) => {
-            const isMe = user?.id === msg.user_id;
-            const senderName = isMe ? 'Sen' : (msg.profiles?.full_name || 'Gizli Karavancı');
-            const isSOS = msg.text.includes('🚨 ACİL DURUM');
-            const isNudge = msg.text === "👉 DÜRTÜYOR...";
-            
-            return (
-              <div key={msg.id} className={`${styles.messageWrapper} ${isMe ? styles.messageMe : styles.messageOther}`}>
-                {!isMe && (
-                  <div className={styles.avatar} style={{width: '32px', height: '32px', fontSize: '0.8rem'}}>
-                    {senderName.charAt(0)}
-                  </div>
-                )}
-                <div className={styles.messageContent}>
-                  {!isMe && (
-                    <span className={styles.senderName}>
-                      {senderName}
-                      {msg.profiles?.is_verified && <span className="badge badge-verified" style={{padding: '1px 6px', fontSize: '0.6rem'}}>✓</span>}
-                    </span>
-                  )}
-                  <div 
-                    className={`${styles.messageBubble} ${isSOS ? styles.sosBubble : ''} ${isNudge ? styles.nudgeBubble : ''} glass-card`}
-                  >
-                    {msg.text}
-                  </div>
-                  <span className={styles.messageTime}>{formatTime(msg.created_at)}</span>
+            <div className={styles.lcdScreen}>
+              <div className={styles.lcdHeader}>
+                <span className={styles.lcdStatusDot}></span>
+                <span className={styles.lcdMode}>RX / ÇEVRİMİÇİ</span>
+                <span className={styles.lcdSignal}>SIG: ▂▄▆█</span>
+              </div>
+              <div className={styles.lcdMain}>
+                <div className={styles.lcdChannelCode}>
+                  {isPrivate ? 'PRIVATE' : currentChannelInfo.code}
+                </div>
+                <div className={styles.lcdFreq}>
+                  {isPrivate && privateUser ? privateUser.full_name : currentChannelInfo.freq}
                 </div>
               </div>
-            );
-          })}
+              <div className={styles.lcdDesc}>
+                {isPrivate ? 'Birebir Güvenli Görüşme' : currentChannelInfo.desc}
+              </div>
+            </div>
+
+            <button className={styles.sosTriggerBtn} onClick={() => setIsSOSModalOpen(true)}>
+              <span className={styles.sosBeacon}></span>
+              🚨 SOS
+            </button>
+          </div>
+        </div>
+
+        {/* Hızlı Anons Çipleri */}
+        {!isPrivate && (
+          <div className={styles.quickCuesBar}>
+            <span className={styles.quickCuesLabel}>Hızlı Anons:</span>
+            {QUICK_RADIO_CALLS.map((cue, idx) => (
+              <button
+                key={idx}
+                className={styles.quickCueBtn}
+                onClick={() => {
+                  if (!user) return showToast("Anons geçmek için giriş yapmalısınız.", "warning");
+                  sendMessage(undefined, cue);
+                }}
+              >
+                {cue}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Mesaj Akışı */}
+        <div className={styles.messagesContainer}>
+          <div className={styles.ephemeralNotice}>
+            ⚡ Telsiz anonsları ephemeral olup 30 dakika sonra otomatik olarak havadan silinir.
+          </div>
+
+          {messages.length === 0 ? (
+            <div className={styles.emptyMessages}>
+              <span style={{ fontSize: '2.5rem' }}>📻</span>
+              <p>Frekans şu an sakin. İlk anonsu sen geç komşu!</p>
+            </div>
+          ) : (
+            messages.map((msg) => {
+              const isMe = user?.id === msg.user_id;
+              const senderName = isMe ? 'Sen' : (msg.profiles?.full_name || 'Gizli Karavancı');
+              const isSOS = msg.text.includes('🚨 ACİL DURUM');
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`${styles.messageWrapper} ${isMe ? styles.messageMe : styles.messageOther}`}
+                >
+                  {!isMe && (
+                    <div className={styles.avatar}>
+                      {senderName.charAt(0)}
+                    </div>
+                  )}
+                  <div className={styles.messageContent}>
+                    {!isMe && (
+                      <span className={styles.senderName}>
+                        {senderName}
+                        {msg.profiles?.is_verified && <span className={styles.verifiedTag}>✓</span>}
+                      </span>
+                    )}
+                    <div className={`${styles.messageBubble} ${isSOS ? styles.sosBubble : ''}`}>
+                      {msg.text}
+                    </div>
+                    <span className={styles.messageTime}>{formatTime(msg.created_at)}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Telsiz PTT Mesaj Gönderme Kutusu */}
         <div className={styles.inputArea}>
           {user ? (
             <form onSubmit={sendMessage} className={styles.chatForm}>
-              <input 
-                type="text" 
-                placeholder={isPrivate ? "Özel mesaj yaz..." : "Telsize anons geç..."}
+              <input
+                type="text"
+                placeholder={isPrivate ? "Özel telsiz mesajı yaz..." : `${currentChannelInfo.name} frekansına anons geç...`}
                 className={styles.messageInput}
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
               />
-              <button type="submit" className="btn-primary">
-                Gönder
+              <button
+                type="submit"
+                className={`${styles.pttButton} ${isTransmitting ? styles.pttActive : ''}`}
+                disabled={!newMessage.trim()}
+              >
+                <span className={styles.pttMic}>🎙️</span>
+                <span>{isTransmitting ? 'İLETİLİYOR...' : 'ANONS GEÇ'}</span>
               </button>
             </form>
           ) : (
             <div className={styles.loginPrompt}>
-              Mesaj yazabilmek için lütfen <Link href="/gunluk">Giriş Yapın</Link>.
+              Telsiz mandalına basabilmek için lütfen <Link href="/gunluk">Giriş Yapın</Link>.
             </div>
           )}
         </div>
-        
-        <div className={styles.diagnostic}>
-          <span className="pulse-dot" style={{width: '6px', height: '6px'}}></span>
-          {onlineUsers.length} kişi çevrimiçi · 30 dk sonra silinir
-        </div>
       </main>
+
+      {/* ─── Acil Durum SOS Modalı ─── */}
+      {isSOSModalOpen && (
+        <div className={styles.modalBackdrop} onClick={() => setIsSOSModalOpen(false)}>
+          <div className={styles.sosModal} onClick={e => e.stopPropagation()}>
+            <div className={styles.sosModalHeader}>
+              <span className={styles.sosAlertIcon}>🚨</span>
+              <div>
+                <h3>Acil Durum (SOS) Bildirisi</h3>
+                <p>Kanal 16 acil durum frekansına anında anons düşer</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSendSOS}>
+              <div className={styles.formGroup}>
+                <label>Arıza / Acil Durum Tipi</label>
+                <select value={sosReason} onChange={e => setSosReason(e.target.value)}>
+                  <option value="Akü Bitti / Marş Basmıyor">⚡ Akü Bitti / Marş Basmıyor</option>
+                  <option value="Çamura / Kuma Saplandım">🚜 Çamura / Kuma Saplandım (Çekme Lazım)</option>
+                  <option value="Lastik Patladı / Stepne Yok">🔵 Lastik Patladı / Stepne Yok</option>
+                  <option value="Su / Yakıt Bitti">💧 Yakıt / Temiz Su Tükendi</option>
+                  <option value="Medikal / Sağlık Acili">🩺 Medikal / Sağlık Desteği</option>
+                  <option value="Diğer Acil Durum">⚠️ Diğer Acil Durum</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Durum Detayı & Konum Notu</label>
+                <textarea
+                  rows={3}
+                  placeholder="Hangi mevkidesiniz? Yol durumu nedir? Örn: Antalya-Kumluca sahil yolu 12. km, beyaz Ducato karavan..."
+                  value={sosNote}
+                  onChange={e => setSosNote(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.coordsNotice}>
+                {sosCoords ? (
+                  <span>📍 GPS Koordinatınız hazır: {sosCoords.lat.toFixed(4)}, {sosCoords.lng.toFixed(4)}</span>
+                ) : (
+                  <span>📍 GPS tespiti bekleniyor veya tarayıcı izni kapalı</span>
+                )}
+              </div>
+
+              <div className={styles.modalButtons}>
+                <button type="button" className="btn-ghost" onClick={() => setIsSOSModalOpen(false)}>
+                  Vazgeç
+                </button>
+                <button type="submit" className={styles.sosSubmitBtn}>
+                  🚨 SOS YAYININI BAŞLAT
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
