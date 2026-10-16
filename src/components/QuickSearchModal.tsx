@@ -16,7 +16,6 @@ interface SearchResult {
 
 const STATIC_PAGES: SearchResult[] = [
   { id: 'page-kesfet', type: 'page', title: 'Harita & Keşfet', subtitle: 'Konaklama noktaları ve yol ustaları', icon: '🗺️', href: '/kesfet' },
-  { id: 'page-egzersiz', type: 'page', title: 'VanLife Fit & Egzersiz', subtitle: 'Sürüş sonrası bel açma, hareketli animasyonlar ve kamp fit', icon: '🏃', href: '/egzersiz' },
   { id: 'page-rota', type: 'page', title: 'Rota Planlayıcı', subtitle: 'Karavanına uygun güvenli rotalar çiz', icon: '🛣️', href: '/rota' },
   { id: 'page-telsiz', type: 'page', title: 'Telsiz & SOS', subtitle: 'Canlı frekans, yakındaki karavancılar', icon: '📻', href: '/telsiz' },
   { id: 'page-manzara', type: 'page', title: 'Manzara & Rotalar', subtitle: 'Topluluk fotoğrafları ve askıda notlar', icon: '📸', href: '/manzara' },
