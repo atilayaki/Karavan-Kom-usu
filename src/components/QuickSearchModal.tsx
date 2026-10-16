@@ -168,7 +168,7 @@ export default function QuickSearchModal({
           {!loading && results.length === 0 && (
             <div className={styles.emptyState}>
               <span style={{ fontSize: '2rem' }}>🏕️</span>
-              <p>"{query}" ile eşleşen bir şey bulamadık.</p>
+              <p>&quot;{query}&quot; ile eşleşen bir şey bulamadık.</p>
               <small>Farklı bir kelime aramayı veya haritaya göz atmayı deneyin.</small>
             </div>
           )}
