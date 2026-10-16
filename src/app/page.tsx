@@ -266,6 +266,17 @@ export default function Home() {
               <p>Her gece 20:00'da alevlenen ve gece yarısı sönen topluluk muhabbeti.</p>
             </Link>
 
+            <Link href="/egzersiz" className={`${styles.featureCard} glass-card`}>
+              <div className={styles.featureIconWrap} style={{ background: 'rgba(34, 197, 94, 0.2)' }}>
+                <span style={{ fontSize: '1.6rem' }}>🏃</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ margin: 0 }}>VanLife Fit</h3>
+                <span style={{ background: '#22c55e', color: '#052e16', fontSize: '0.65rem', fontWeight: 800, padding: '2px 6px', borderRadius: '6px' }}>YENİ</span>
+              </div>
+              <p>Hareketli animasyonlarla sürüş sonrası bel açma, esneme ve kamp antrenmanı.</p>
+            </Link>
+
             <Link href="/rehber" className={`${styles.featureCard} glass-card`}>
               <div className={styles.featureIconWrap} style={{ background: 'rgba(45, 90, 39, 0.15)' }}>
                 <IconBook size={28} color="var(--forest-green)" />

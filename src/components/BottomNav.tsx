@@ -13,6 +13,7 @@ const PRIMARY_NAV = [
 ];
 
 const MORE_TOOLS = [
+  { name: 'VanLife Fit',     path: '/egzersiz',    icon: '🏃', desc: 'Kamp ve sürüş sonrası egzersizler' },
   { name: 'Rota Planlayıcı', path: '/rota',        icon: '🛣️', desc: 'Güvenli karavan rotası çiz' },
   { name: 'Bakım Takvimi',   path: '/bakim',       icon: '🔧', desc: 'Servis ve periyodik takip' },
   { name: 'Kamp Ateşi',      path: '/kamp-atesi',  icon: '🔥', desc: 'Gece 20:00 topluluk sohbeti' },

@@ -15,6 +15,7 @@ import KaravanQRCard from '@/components/KaravanQRCard';
 import OnboardingModal from '@/components/OnboardingModal';
 import ConfettiCelebration from '@/components/ConfettiCelebration';
 import CityStickers from '@/components/CityStickers';
+import ActivityHeatmap from '@/components/ActivityHeatmap';
 
 export default function GunlukPage() {
   const { showToast } = useToast();
@@ -489,6 +490,22 @@ export default function GunlukPage() {
 
           <div className={styles.panelSection + " glass-card"}>
             <CityStickers userId={session.user.id} />
+          </div>
+
+          <div className={styles.panelSection + " glass-card"}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.6rem' }}>🏃</span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>VanLife Fit & Kamp Sağlığı</h3>
+                  <small style={{ color: '#94a3b8' }}>Düzenli kamp egzersizleri ve hareket geçmişi</small>
+                </div>
+              </div>
+              <Link href="/egzersiz" className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                Egzersiz Merkezine Git →
+              </Link>
+            </div>
+            <ActivityHeatmap />
           </div>
         </div>
       )}
